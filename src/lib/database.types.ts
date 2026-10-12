@@ -3,7 +3,8 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type CategoryKind = 'income' | 'expense';
+export type AccountKind = 'main' | 'savings';
+export type TransactionKind = 'income' | 'expense' | 'transfer';
 
 export type Database = {
   public: {
@@ -14,6 +15,7 @@ export type Database = {
           user_id: string;
           name: string;
           currency: string;
+          kind: AccountKind;
           created_at: string;
         };
         Insert: {
@@ -21,6 +23,7 @@ export type Database = {
           user_id?: string;
           name: string;
           currency?: string;
+          kind?: AccountKind;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['accounts']['Insert']>;
@@ -31,14 +34,16 @@ export type Database = {
           id: string;
           user_id: string;
           name: string;
-          kind: CategoryKind;
+          icon: string;
+          color_slot: number | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id?: string;
           name: string;
-          kind: CategoryKind;
+          icon?: string;
+          color_slot?: number | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['categories']['Insert']>;
@@ -50,6 +55,8 @@ export type Database = {
           user_id: string;
           account_id: string;
           category_id: string | null;
+          kind: TransactionKind;
+          transfer_id: string | null;
           amount_cents: number;
           occurred_on: string;
           note: string | null;
@@ -60,6 +67,8 @@ export type Database = {
           user_id?: string;
           account_id: string;
           category_id?: string | null;
+          kind: TransactionKind;
+          transfer_id?: string | null;
           amount_cents: number;
           occurred_on?: string;
           note?: string | null;
@@ -84,7 +93,18 @@ export type Database = {
         ];
       };
     };
-    Views: { [_ in never]: never };
+    Views: {
+      account_balances: {
+        Row: {
+          id: string;
+          kind: AccountKind;
+          name: string;
+          currency: string;
+          balance_cents: number;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       list_app_users: {
         Args: never;
@@ -94,6 +114,10 @@ export type Database = {
           icon: string;
           has_password: boolean;
         }[];
+      };
+      move_money: {
+        Args: { amount: number; to_savings: boolean; note?: string | null };
+        Returns: string;
       };
     };
     Enums: { [_ in never]: never };
