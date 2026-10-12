@@ -1,5 +1,4 @@
 import {
-  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -11,65 +10,72 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 
-/** iOS text field on a grouped background. */
 export function Input(props: TextInputProps) {
   const theme = useTheme();
   return (
     <TextInput
       placeholderTextColor={theme.textMuted}
       {...props}
-      style={[styles.input, { backgroundColor: theme.card, color: theme.text }, props.style]}
+      style={[
+        styles.input,
+        { backgroundColor: theme.backgroundElement, color: theme.text },
+        props.style,
+      ]}
     />
   );
 }
 
 type ButtonProps = PressableProps & {
   title: string;
-  /** primary = filled tint, secondary = tinted, danger = destructive row. */
   variant?: 'primary' | 'secondary' | 'danger';
 };
 
 export function Button({ title, variant = 'primary', disabled, ...props }: ButtonProps) {
   const theme = useTheme();
-  const bg = variant === 'primary' ? theme.accent : variant === 'danger' ? theme.card : tinted(theme.accent);
-  const fg = variant === 'primary' ? '#ffffff' : variant === 'danger' ? theme.expense : theme.accent;
+  const bg =
+    variant === 'primary' ? theme.text : variant === 'danger' ? 'transparent' : theme.backgroundElement;
+  const fg = variant === 'primary' ? theme.background : variant === 'danger' ? theme.expense : theme.text;
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
       {...props}
       style={({ pressed }) => [styles.button, { backgroundColor: bg }, (pressed || disabled) && styles.dimmed]}>
-      <ThemedText style={[styles.buttonText, { color: fg }]}>{title}</ThemedText>
+      <ThemedText type="smallBold" style={{ color: fg }}>
+        {title}
+      </ThemedText>
     </Pressable>
   );
 }
 
-/** Inset grouped section (the rounded white block of an iOS settings list). */
+/** Rounded surface for grouping content. */
 export function Card({ style, ...props }: ViewProps) {
   const theme = useTheme();
-  return <View {...props} style={[styles.card, { backgroundColor: theme.card }, style]} />;
+  return (
+    <View
+      {...props}
+      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }, style]}
+    />
+  );
 }
 
-/** iOS grouped-list section header: small uppercase label above a Card. */
 export function SectionTitle({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
     <View style={styles.sectionTitle}>
-      <ThemedText themeColor="textSecondary" style={styles.sectionText}>
-        {title.toUpperCase()}
-      </ThemedText>
+      <ThemedText type="smallBold">{title}</ThemedText>
       {right}
     </View>
   );
 }
 
-/** Capsule option, tinted when selected. */
+/** Pill-shaped selectable option. */
 export function Chip({
   label,
   selected,
   onPress,
+  color,
 }: {
   label: string;
   selected: boolean;
@@ -84,17 +90,20 @@ export function Chip({
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? theme.accent : theme.card },
+        {
+          backgroundColor: selected ? theme.text : theme.backgroundElement,
+          borderColor: selected ? theme.text : color ?? 'transparent',
+        },
         pressed && styles.dimmed,
       ]}>
-      <ThemedText type="small" style={{ color: selected ? '#ffffff' : theme.text }}>
+      <ThemedText type="small" style={{ color: selected ? theme.background : theme.text }}>
         {label}
       </ThemedText>
     </Pressable>
   );
 }
 
-/** iOS segmented control. */
+/** Segmented control with equal-width options. */
 export function Segmented<T extends string>({
   options,
   value,
@@ -105,8 +114,6 @@ export function Segmented<T extends string>({
   onChange: (value: T) => void;
 }) {
   const theme = useTheme();
-  const scheme = useColorScheme();
-  const selectedBg = scheme === 'dark' ? '#636366' : '#ffffff';
   return (
     <View style={[styles.segmented, { backgroundColor: theme.backgroundElement }]}>
       {options.map((o) => {
@@ -117,8 +124,8 @@ export function Segmented<T extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected }}
             onPress={() => onChange(o.value)}
-            style={[styles.segment, selected && [styles.segmentSelected, { backgroundColor: selectedBg }]]}>
-            <ThemedText style={[styles.segmentText, { fontWeight: selected ? 600 : 500, color: theme.text }]}>
+            style={[styles.segment, selected && { backgroundColor: theme.card }]}>
+            <ThemedText type="smallBold" themeColor={selected ? 'text' : 'textSecondary'}>
               {o.label}
             </ThemedText>
           </Pressable>
@@ -128,67 +135,46 @@ export function Segmented<T extends string>({
   );
 }
 
-/** Tint at 15% opacity, e.g. for tinted buttons and icon wells. */
-export function tinted(hex: string, alpha = 0.15) {
-  if (!hex.startsWith('#') || hex.length !== 7) return hex;
-  const n = parseInt(hex.slice(1), 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
-}
-
-const shadow = Platform.select({
-  web: { boxShadow: '0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04)' },
-  default: {
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-});
-
 const styles = StyleSheet.create({
   input: {
     borderRadius: Radius.medium,
     paddingHorizontal: Spacing.three,
-    paddingVertical: 11,
-    fontSize: 17,
+    paddingVertical: Spacing.three,
+    fontSize: 16,
   },
   button: {
-    borderRadius: Radius.large + 2,
-    paddingVertical: 14,
+    borderRadius: Radius.medium,
+    paddingVertical: Spacing.three,
     alignItems: 'center',
   },
-  buttonText: { fontSize: 17, lineHeight: 22, fontWeight: 600 },
-  dimmed: { opacity: 0.5 },
+  dimmed: { opacity: 0.6 },
   card: {
     borderRadius: Radius.large,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: Spacing.three,
-    overflow: 'hidden',
   },
   sectionTitle: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    marginBottom: -Spacing.two,
+    paddingHorizontal: Spacing.one,
   },
-  sectionText: { fontSize: 13, lineHeight: 18, letterSpacing: -0.08 },
   chip: {
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
     borderRadius: 999,
+    borderWidth: 1.5,
   },
   segmented: {
     flexDirection: 'row',
-    borderRadius: 9,
-    padding: 2,
+    borderRadius: Radius.medium,
+    padding: Spacing.one,
+    gap: Spacing.one,
   },
   segment: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 6,
-    borderRadius: 7,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.small,
   },
-  segmentSelected: shadow as object,
-  segmentText: { fontSize: 13, lineHeight: 18, letterSpacing: -0.08 },
 });
