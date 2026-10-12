@@ -10,6 +10,7 @@ import { formatDay, shiftDay, today } from '@/lib/dates';
 import { amountPlaceholder, formatMoney, minorDigits, parseAmount } from '@/lib/money';
 import { POTS } from '@/lib/pots';
 import { useFinance, type EntryDraft, type EntryType, type Pot } from '@/providers/finance-provider';
+import { MASKED, usePrivacy } from '@/providers/privacy-provider';
 
 const TYPES: { value: EntryType; label: string }[] = [
   { value: 'income', label: 'Add money' },
@@ -31,6 +32,7 @@ type Props = {
 export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: Props) {
   const theme = useTheme();
   const { categories, balances } = useFinance();
+  const { locked } = usePrivacy();
   const currency = balances.currency;
 
   const [type, setType] = useState(initial.type);
@@ -51,7 +53,7 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
     if (!minor) return setError(`Enter an amount, e.g. ${amountPlaceholder(currency).replace('0,', '12,')}`);
     if (type === 'transfer' && pot === toPot) return setError('Pick two different places.');
     if (!lockType && type === 'transfer' && minor > balances[pot])
-      return setError(`You only have ${formatMoney(balances[pot], currency)} there.`);
+      return setError(locked ? 'Not enough money there.' : `You only have ${formatMoney(balances[pot], currency)} there.`);
 
     setSaving(true);
     setError(null);
@@ -138,6 +140,7 @@ function PotPicker({
 }) {
   const theme = useTheme();
   const { balances } = useFinance();
+  const { locked } = usePrivacy();
   const pots = POTS.filter((p) => !only || only.includes(p.value));
   return (
     <View style={styles.block}>
@@ -163,7 +166,7 @@ function PotPicker({
                 {p.label}
               </ThemedText>
               <ThemedText type="small" style={{ color: fg, opacity: 0.75 }} numberOfLines={1}>
-                {formatMoney(balances[p.value], balances.currency)}
+                {locked ? `${MASKED} DT` : formatMoney(balances[p.value], balances.currency)}
               </ThemedText>
             </Pressable>
           );

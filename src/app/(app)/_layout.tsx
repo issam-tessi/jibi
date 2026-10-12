@@ -1,10 +1,12 @@
 import { Stack } from 'expo-router';
 
 import { FinanceProvider } from '@/providers/finance-provider';
+import { PrivacyProvider } from '@/providers/privacy-provider';
 
 export default function AppLayout() {
   return (
     <FinanceProvider>
+      <PrivacyProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="entry" options={{ presentation: 'modal' }} />
@@ -12,6 +14,7 @@ export default function AppLayout() {
         <Stack.Screen name="category/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="history" options={{ presentation: 'modal' }} />
       </Stack>
+      </PrivacyProvider>
     </FinanceProvider>
   );
 }
