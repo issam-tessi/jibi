@@ -1,21 +1,25 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { IconPicker, CATEGORY_ICONS } from '@/components/icon-picker';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Input, SectionTitle } from '@/components/ui';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useCategoryColor, useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 import { useFinance, type Category } from '@/providers/finance-provider';
 
-const ICONS = ['🛒', '🥖', '☕', '🍔', '🍕', '🥤', '🍰', '🍽️', '🚬', '🍺', '🎮', '🎬', '🎵', '⚽', '🏋️', '🎲', '🏠', '💡', '💧', '🔥', '📶', '📱', '🧾', '🧹', '⛽', '🚗', '🚕', '🚌', '🚆', '🛵', '🅿️', '✈️', '💊', '🏥', '🦷', '👓', '💇', '🧴', '💄', '🧺', '👶', '🍼', '🎓', '📚', '🐶', '🎁', '🎂', '💍', '🐑', '🌙', '🕌', '🏖️', '💸', '🤝', '🏦', '💳', '👕', '👟', '🛍️', '💻', '🛠️', '🧸', '🚭', '📦'];
+function duplicateNameMessage(err: string) {
+  return err.includes('duplicate') ? 'You already have a category with that name.' : err;
+}
 
 export default function CategoriesScreen() {
   const theme = useTheme();
-  const { categories, createCategory, deleteCategory } = useFinance();
+  const { categories, createCategory } = useFinance();
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState(ICONS[0]);
+  const [icon, setIcon] = useState(CATEGORY_ICONS[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,46 +29,36 @@ export default function CategoriesScreen() {
     setError(null);
     const err = await createCategory(name, icon);
     setBusy(false);
-    if (err) setError(err.includes('duplicate') ? 'You already have a category with that name.' : err);
+    if (err) setError(duplicateNameMessage(err));
     else setName('');
-  }
-
-  async function remove(c: Category) {
-    const message = 'Payments in it will move back to “To sort”.';
-    const confirmed =
-      Platform.OS === 'web'
-        ? window.confirm(`Delete “${c.name}”? ${message}`)
-        : await new Promise<boolean>((resolve) =>
-            Alert.alert(`Delete “${c.name}”?`, message, [
-              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-              { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
-            ])
-          );
-    if (!confirmed) return;
-    const err = await deleteCategory(c.id);
-    if (err) setError(err);
   }
 
   return (
     <Screen>
+      <SectionTitle title={`Your categories · ${categories.length}`} />
+      <Card style={styles.list}>
+        <ThemedText type="small" themeColor="textSecondary">
+          Tap a category to rename it or change its icon.
+        </ThemedText>
+        {categories.map((c) => (
+          <CategoryRow
+            key={c.id}
+            category={c}
+            onPress={() => router.push({ pathname: '/category/[id]', params: { id: c.id } })}
+          />
+        ))}
+      </Card>
+
       <SectionTitle title="New category" />
       <Card style={styles.form}>
-        <View style={styles.icons}>
-          {ICONS.map((i) => (
-            <Pressable
-              key={i}
-              onPress={() => setIcon(i)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: icon === i }}
-              style={[
-                styles.iconChoice,
-                { backgroundColor: icon === i ? theme.backgroundSelected : 'transparent' },
-              ]}>
-              <ThemedText style={styles.iconText}>{i}</ThemedText>
-            </Pressable>
-          ))}
-        </View>
-        <Input placeholder="Name, e.g. Coffee" value={name} onChangeText={setName} maxLength={60} onSubmitEditing={add} />
+        <IconPicker value={icon} onChange={setIcon} />
+        <Input
+          placeholder="Name, e.g. Cigarettes"
+          value={name}
+          onChangeText={setName}
+          maxLength={60}
+          onSubmitEditing={add}
+        />
         {error && (
           <ThemedText type="small" style={{ color: theme.expense }}>
             {error}
@@ -73,43 +67,34 @@ export default function CategoriesScreen() {
         <Button title={`Add ${icon} ${name.trim() || 'category'}`} disabled={busy} onPress={add} />
       </Card>
 
-      <SectionTitle title={`Your categories · ${categories.length}`} />
-      <Card style={styles.list}>
-        {categories.map((c) => (
-          <CategoryRow key={c.id} category={c} onDelete={() => remove(c)} />
-        ))}
-      </Card>
-
       <Button title="Sign out" variant="secondary" onPress={() => supabase.auth.signOut()} />
     </Screen>
   );
 }
 
-function CategoryRow({ category, onDelete }: { category: Category; onDelete: () => void }) {
+function CategoryRow({ category, onPress }: { category: Category; onPress: () => void }) {
   const colorFor = useCategoryColor();
   const color = colorFor(category.color_slot);
   return (
-    <View style={styles.row}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${category.name}`}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <View style={[styles.bubble, { backgroundColor: color + '26', borderColor: color }]}>
         <ThemedText style={styles.rowIcon}>{category.icon}</ThemedText>
       </View>
       <ThemedText style={styles.rowName}>{category.name}</ThemedText>
-      <Pressable onPress={onDelete} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Delete ${category.name}`}>
-        <ThemedText type="small" themeColor="textMuted">
-          Delete
-        </ThemedText>
-      </Pressable>
-    </View>
+      <ThemedText themeColor="textMuted">›</ThemedText>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   form: { gap: Spacing.three },
-  icons: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
-  iconChoice: { width: 44, height: 44, borderRadius: Radius.small, alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 22, lineHeight: 28 },
-  list: { paddingVertical: Spacing.two },
+  list: { paddingVertical: Spacing.three, gap: Spacing.one },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
+  pressed: { opacity: 0.6 },
   bubble: {
     width: 36,
     height: 36,

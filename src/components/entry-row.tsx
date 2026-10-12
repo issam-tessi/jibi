@@ -4,27 +4,33 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useCategoryColor, useTheme } from '@/hooks/use-theme';
 import { formatMoney } from '@/lib/money';
+import { potIcon, potLabel, transferIcon, transferTitle } from '@/lib/pots';
 import { useFinance, type Entry } from '@/providers/finance-provider';
 
-/** How an entry is presented: icon, title, and the color of its icon bubble. */
+/** How an entry is presented: icon, title, which pot(s) it touched, and its accent color. */
 export function useEntryPresentation() {
   const theme = useTheme();
   const categoryColor = useCategoryColor();
 
   return (entry: Entry) => {
-    if (entry.kind === 'income') return { icon: '💰', title: 'Money added', color: theme.income };
+    const from = entry.account_kind;
+    if (entry.kind === 'income')
+      return { icon: '➕', title: 'Money added', where: `to ${potIcon(from)} ${potLabel(from)}`, color: theme.income };
     if (entry.kind === 'transfer') {
-      const toSavings = entry.amount_cents < 0;
+      const to = entry.to_account_kind;
       return {
-        icon: '🐷',
-        title: toSavings ? 'Moved to savings' : 'Taken from savings',
+        icon: transferIcon(from, to),
+        title: transferTitle(from, to),
+        where: `${potIcon(from)} ${potLabel(from)} → ${potIcon(to)} ${potLabel(to)}`,
         color: theme.savings,
       };
     }
-    if (!entry.category) return { icon: '❔', title: 'Payment · to sort', color: theme.unsorted };
+    const where = `${potIcon(from)} ${potLabel(from)}`;
+    if (!entry.category) return { icon: '❔', title: 'Payment · to sort', where, color: theme.unsorted };
     return {
       icon: entry.category.icon,
       title: entry.category.name,
+      where,
       color: categoryColor(entry.category.color_slot),
     };
   };
@@ -34,8 +40,9 @@ export function EntryRow({ entry, onPress }: { entry: Entry; onPress?: () => voi
   const theme = useTheme();
   const { balances } = useFinance();
   const present = useEntryPresentation()(entry);
-  const positive = entry.amount_cents > 0;
-  const amountColor = entry.kind === 'transfer' ? theme.textSecondary : positive ? theme.income : theme.text;
+  const amount = Math.abs(entry.amount_cents);
+  const sign = entry.kind === 'income' ? '+' : entry.kind === 'expense' ? '−' : '';
+  const amountColor = entry.kind === 'income' ? theme.income : entry.kind === 'transfer' ? theme.textSecondary : theme.text;
 
   return (
     <Pressable
@@ -49,15 +56,14 @@ export function EntryRow({ entry, onPress }: { entry: Entry; onPress?: () => voi
         <ThemedText type="smallBold" numberOfLines={1}>
           {present.title}
         </ThemedText>
-        {entry.note ? (
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            {entry.note}
-          </ThemedText>
-        ) : null}
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          {present.where}
+          {entry.note ? ` · ${entry.note}` : ''}
+        </ThemedText>
       </View>
       <ThemedText type="smallBold" style={[styles.amount, { color: amountColor }]}>
-        {positive ? '+' : '−'}
-        {formatMoney(Math.abs(entry.amount_cents), balances.currency)}
+        {sign}
+        {formatMoney(amount, balances.currency)}
       </ThemedText>
     </Pressable>
   );

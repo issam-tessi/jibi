@@ -1,33 +1,42 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 
-import type { Tables } from '@/lib/database.types';
+import type { AccountKind, Database, Tables } from '@/lib/database.types';
 import { DEFAULT_CURRENCY } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 
 export type Category = Tables<'categories'>;
+export type Pot = AccountKind;
+export type EntryType = Tables<'transactions'>['kind'];
 
-export type Entry = Tables<'transactions'> & {
+type EntryRow = Database['public']['Views']['entries']['Row'];
+
+/**
+ * One logical entry. For transfers, `amount_cents` is the outgoing (negative) leg,
+ * `account_kind` is the source pot and `to_account_kind` the destination.
+ */
+export type Entry = EntryRow & {
   category: Pick<Category, 'id' | 'name' | 'icon' | 'color_slot'> | null;
 };
-
-export type EntryType = Entry['kind'];
 
 /** What the entry form produces. `minor` is a positive amount in minor units (millimes for TND). */
 export type EntryDraft = {
   type: EntryType;
   minor: number;
   categoryId: string | null;
-  toSavings: boolean;
+  /** Pot for income/expense; source pot for transfers. */
+  pot: Pot;
+  /** Destination pot for transfers. */
+  toPot: Pot;
   note: string;
   date: string;
 };
 
-type Balances ={ main: number; savings: number; currency: string };
+type Balances = Record<Pot, number> & { currency: string };
 
 type FinanceState = {
   balances: Balances;
   categories: Category[];
-  /** Everything that touched the main balance, newest first (transfers appear once). */
+  /** Recent entries across all pots, newest first (transfers appear once). */
   activity: Entry[];
   /** Payments that still need a category, newest first. */
   unsorted: Entry[];
@@ -36,20 +45,20 @@ type FinanceState = {
 };
 
 type FinanceActions = {
-  mainAccountId: string | undefined;
   refresh: () => Promise<void>;
+  /** Attaches category details to raw entry rows (e.g. from a custom query). */
+  withCategories: (rows: EntryRow[]) => Entry[];
   /** Creates a new entry, or updates `existing` (whose type can't change). */
   saveEntry: (draft: EntryDraft, existing?: Entry) => Promise<string | null>;
   categorize: (entryId: string, categoryId: string | null) => Promise<string | null>;
   deleteEntry: (entry: Entry) => Promise<string | null>;
   createCategory: (name: string, icon: string) => Promise<string | null>;
+  updateCategory: (id: string, name: string, icon: string) => Promise<string | null>;
   deleteCategory: (id: string) => Promise<string | null>;
 };
 
-const ENTRY_SELECT = '*, category:categories(id, name, icon, color_slot)';
-
 const INITIAL: FinanceState = {
-  balances: { main: 0, savings: 0, currency: DEFAULT_CURRENCY },
+  balances: { card: 0, cash: 0, savings: 0, currency: DEFAULT_CURRENCY },
   categories: [],
   activity: [],
   unsorted: [],
@@ -59,49 +68,52 @@ const INITIAL: FinanceState = {
 
 const FinanceContext = createContext<(FinanceState & FinanceActions) | null>(null);
 
+function attachCategories(rows: EntryRow[], categories: Category[]): Entry[] {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  return rows.map((r) => ({ ...r, category: (r.category_id && byId.get(r.category_id)) || null }));
+}
+
 /** Single source of truth for the signed-in user's money; every mutation refreshes balances everywhere. */
 export function FinanceProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<FinanceState>(INITIAL);
-  const [accountIds, setAccountIds] = useState<{ main?: string; savings?: string }>({});
+  const [potIds, setPotIds] = useState<Partial<Record<Pot, string>>>({});
 
   const refresh = useCallback(async () => {
-    const [balances, categories, unsorted] = await Promise.all([
+    const [balances, categories, activity, unsorted] = await Promise.all([
       supabase.from('account_balances').select('*'),
       supabase.from('categories').select('*').order('created_at'),
       supabase
-        .from('transactions')
-        .select(ENTRY_SELECT)
+        .from('entries')
+        .select('*')
+        .order('occurred_on', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(200),
+      supabase
+        .from('entries')
+        .select('*')
         .eq('kind', 'expense')
         .is('category_id', null)
         .order('occurred_on', { ascending: false })
         .order('created_at', { ascending: false }),
     ]);
 
-    const main = balances.data?.find((b) => b.kind === 'main');
-    const savings = balances.data?.find((b) => b.kind === 'savings');
+    const rows = balances.data ?? [];
+    const pick = (kind: Pot) => rows.find((b) => b.kind === kind);
+    const cats = categories.data ?? [];
 
-    const activity = main
-      ? await supabase
-          .from('transactions')
-          .select(ENTRY_SELECT)
-          .eq('account_id', main.id)
-          .order('occurred_on', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(100)
-      : { data: [], error: null };
-
-    setAccountIds({ main: main?.id, savings: savings?.id });
+    setPotIds({ card: pick('card')?.id, cash: pick('cash')?.id, savings: pick('savings')?.id });
     setState({
       balances: {
-        main: main?.balance_cents ?? 0,
-        savings: savings?.balance_cents ?? 0,
-        currency: main?.currency ?? DEFAULT_CURRENCY,
+        card: pick('card')?.balance_cents ?? 0,
+        cash: pick('cash')?.balance_cents ?? 0,
+        savings: pick('savings')?.balance_cents ?? 0,
+        currency: pick('card')?.currency ?? DEFAULT_CURRENCY,
       },
-      categories: categories.data ?? [],
-      activity: activity.data ?? [],
-      unsorted: unsorted.data ?? [],
+      categories: cats,
+      activity: attachCategories(activity.data ?? [], cats),
+      unsorted: attachCategories(unsorted.data ?? [], cats),
       loading: false,
-      error: (balances.error ?? categories.error ?? unsorted.error ?? activity.error)?.message ?? null,
+      error: (balances.error ?? categories.error ?? activity.error ?? unsorted.error)?.message ?? null,
     });
   }, []);
 
@@ -119,29 +131,35 @@ export function FinanceProvider({ children }: PropsWithChildren) {
     };
 
     return {
-      mainAccountId: accountIds.main,
       refresh,
+      withCategories: (rows) => attachCategories(rows, state.categories),
       saveEntry: (draft, existing) => {
         const note = draft.note.trim() || null;
         if (draft.type === 'transfer') {
-          const args = { amount: draft.minor, to_savings: draft.toSavings, note, occurred_on: draft.date };
+          const args = {
+            amount: draft.minor,
+            from_pot: draft.pot,
+            to_pot: draft.toPot,
+            note,
+            occurred_on: draft.date,
+          };
           return run(
             existing?.transfer_id
               ? supabase.rpc('update_transfer', { transfer: existing.transfer_id, ...args })
               : supabase.rpc('move_money', args)
           );
         }
+        const accountId = potIds[draft.pot];
+        if (!accountId) return Promise.resolve('Account not found.');
         const fields = {
+          account_id: accountId,
           amount_cents: draft.type === 'expense' ? -draft.minor : draft.minor,
           category_id: draft.type === 'expense' ? draft.categoryId : null,
           note,
           occurred_on: draft.date,
         };
         if (existing) return run(supabase.from('transactions').update(fields).eq('id', existing.id));
-        if (!accountIds.main) return Promise.resolve('Balance account not found.');
-        return run(
-          supabase.from('transactions').insert({ ...fields, account_id: accountIds.main, kind: draft.type })
-        );
+        return run(supabase.from('transactions').insert({ ...fields, kind: draft.type }));
       },
       categorize: (entryId, categoryId) =>
         run(supabase.from('transactions').update({ category_id: categoryId }).eq('id', entryId)),
@@ -156,9 +174,11 @@ export function FinanceProvider({ children }: PropsWithChildren) {
         const slot = [1, 2, 3, 4, 5, 6, 7, 8].find((s) => !used.has(s)) ?? null;
         return run(supabase.from('categories').insert({ name: name.trim(), icon, color_slot: slot }));
       },
+      updateCategory: (id, name, icon) =>
+        run(supabase.from('categories').update({ name: name.trim(), icon }).eq('id', id)),
       deleteCategory: (id) => run(supabase.from('categories').delete().eq('id', id)),
     };
-  }, [refresh, accountIds, state.categories]);
+  }, [refresh, potIds, state.categories]);
 
   return <FinanceContext value={{ ...state, ...actions }}>{children}</FinanceContext>;
 }

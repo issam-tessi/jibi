@@ -8,12 +8,13 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDay, shiftDay, today } from '@/lib/dates';
 import { amountPlaceholder, formatMoney, minorDigits, parseAmount } from '@/lib/money';
-import { useFinance, type EntryDraft, type EntryType } from '@/providers/finance-provider';
+import { POTS } from '@/lib/pots';
+import { useFinance, type EntryDraft, type EntryType, type Pot } from '@/providers/finance-provider';
 
 const TYPES: { value: EntryType; label: string }[] = [
   { value: 'income', label: 'Add money' },
   { value: 'expense', label: 'Payment' },
-  { value: 'transfer', label: 'Savings' },
+  { value: 'transfer', label: 'Move' },
 ];
 
 type Props = {
@@ -35,7 +36,8 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
   const [type, setType] = useState(initial.type);
   const [amount, setAmount] = useState(initial.minor ? toInput(initial.minor, currency) : '');
   const [categoryId, setCategoryId] = useState(initial.categoryId);
-  const [toSavings, setToSavings] = useState(initial.toSavings);
+  const [pot, setPot] = useState(initial.pot);
+  const [toPot, setToPot] = useState(initial.toPot);
   const [note, setNote] = useState(initial.note);
   const [date, setDate] = useState(initial.date);
   const [saving, setSaving] = useState(false);
@@ -47,12 +49,13 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
   async function submit() {
     const minor = parseAmount(amount, currency);
     if (!minor) return setError(`Enter an amount, e.g. ${amountPlaceholder(currency).replace('0,', '12,')}`);
-    if (!lockType && type === 'transfer' && !toSavings && minor > balances.savings)
-      return setError(`You only have ${formatMoney(balances.savings, currency)} in savings.`);
+    if (type === 'transfer' && pot === toPot) return setError('Pick two different places.');
+    if (!lockType && type === 'transfer' && minor > balances[pot])
+      return setError(`You only have ${formatMoney(balances[pot], currency)} there.`);
 
     setSaving(true);
     setError(null);
-    const err = await onSubmit({ type, minor, categoryId, toSavings, note, date });
+    const err = await onSubmit({ type, minor, categoryId, pot, toPot, note, date });
     setSaving(false);
     if (err) setError(err);
   }
@@ -78,20 +81,18 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
         </ThemedText>
       </View>
 
-      {type === 'transfer' && (
-        <View style={styles.block}>
-          <Segmented
-            options={[
-              { value: 'in', label: 'Balance → Savings' },
-              { value: 'out', label: 'Savings → Balance' },
-            ]}
-            value={toSavings ? 'in' : 'out'}
-            onChange={(v) => setToSavings(v === 'in')}
-          />
-          <ThemedText type="small" themeColor="textSecondary">
-            In savings: {formatMoney(balances.savings, currency)}
-          </ThemedText>
-        </View>
+      {type === 'transfer' ? (
+        <>
+          <PotPicker label="From" value={pot} onChange={setPot} />
+          <PotPicker label="To" value={toPot} onChange={setToPot} disabled={pot} />
+        </>
+      ) : (
+        <PotPicker
+          label={type === 'income' ? 'Added to' : 'Paid with'}
+          value={pot}
+          onChange={setPot}
+          only={['card', 'cash']}
+        />
       )}
 
       {type === 'expense' && (
@@ -118,6 +119,57 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
       <Button title={saving ? 'Saving…' : submitLabel} disabled={saving} onPress={submit} />
       {footer}
     </>
+  );
+}
+
+/** Row of pot buttons (💳 Card / 💰 Cash / 🐷 Savings), each showing its balance. */
+function PotPicker({
+  label,
+  value,
+  onChange,
+  only,
+  disabled,
+}: {
+  label: string;
+  value: Pot;
+  onChange: (pot: Pot) => void;
+  only?: Pot[];
+  disabled?: Pot;
+}) {
+  const theme = useTheme();
+  const { balances } = useFinance();
+  const pots = POTS.filter((p) => !only || only.includes(p.value));
+  return (
+    <View style={styles.block}>
+      <ThemedText type="smallBold">{label}</ThemedText>
+      <View style={styles.pots}>
+        {pots.map((p) => {
+          const selected = value === p.value;
+          const off = disabled === p.value;
+          const fg = selected ? theme.background : theme.text;
+          return (
+            <Pressable
+              key={p.value}
+              disabled={off}
+              onPress={() => onChange(p.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected, disabled: off }}
+              style={[
+                styles.pot,
+                { backgroundColor: selected ? theme.text : theme.backgroundElement, opacity: off ? 0.35 : 1 },
+              ]}>
+              <ThemedText style={styles.potIcon}>{p.icon}</ThemedText>
+              <ThemedText type="smallBold" style={{ color: fg }}>
+                {p.label}
+              </ThemedText>
+              <ThemedText type="small" style={{ color: fg, opacity: 0.75 }} numberOfLines={1}>
+                {formatMoney(balances[p.value], balances.currency)}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -177,6 +229,9 @@ const styles = StyleSheet.create({
   },
   currency: { fontSize: 18 },
   block: { gap: Spacing.two },
+  pots: { flexDirection: 'row', gap: Spacing.two },
+  pot: { flex: 1, alignItems: 'center', gap: Spacing.half, paddingVertical: Spacing.two, borderRadius: 16 },
+  potIcon: { fontSize: 22, lineHeight: 28 },
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',

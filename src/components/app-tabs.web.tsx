@@ -12,7 +12,7 @@ import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { supabase } from '@/lib/supabase';
+import { Logo } from '@/components/logo';
 
 export default function AppTabs() {
   return (
@@ -53,15 +53,12 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          jibi
-        </ThemedText>
+        <View style={styles.brand}>
+          <Logo size={30} />
+        </View>
 
         {props.children}
 
-        <Pressable onPress={() => supabase.auth.signOut()} style={styles.signOut}>
-          <ThemedText type="link">Sign out</ThemedText>
-        </Pressable>
       </ThemedView>
     </View>
   );
@@ -86,7 +83,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
   },
-  brandText: {
+  brand: {
     marginRight: 'auto',
   },
   pressed: {
@@ -96,8 +93,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
-  },
-  signOut: {
-    marginLeft: Spacing.two,
   },
 });

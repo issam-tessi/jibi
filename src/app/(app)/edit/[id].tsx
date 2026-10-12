@@ -66,7 +66,7 @@ function QuickSort({ entry }: { entry: Entry }) {
 
 function FullEdit({ entry }: { entry: Entry }) {
   const { saveEntry, deleteEntry } = useFinance();
-  const title = entry.kind === 'income' ? 'Edit money added' : entry.kind === 'expense' ? 'Edit payment' : 'Edit savings move';
+  const title = entry.kind === 'income' ? 'Edit money added' : entry.kind === 'expense' ? 'Edit payment' : 'Edit move';
 
   async function remove() {
     const confirmed =
@@ -92,8 +92,8 @@ function FullEdit({ entry }: { entry: Entry }) {
           type: entry.kind,
           minor: Math.abs(entry.amount_cents),
           categoryId: entry.category_id,
-          // Activity shows the main-account leg: negative there means money went into savings.
-          toSavings: entry.amount_cents < 0,
+          pot: entry.account_kind,
+          toPot: entry.to_account_kind ?? 'savings',
           note: entry.note ?? '',
           date: entry.occurred_on,
         }}

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Logo } from '@/components/logo';
 import { Button, Input } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { appUserEmail, useAppUsers, type AppUser } from '@/hooks/use-app-users';
@@ -25,6 +26,7 @@ export default function SignInScreen() {
             <PasswordStep user={selected} onBack={() => setSelected(null)} />
           ) : (
             <>
+              <Logo size={56} />
               <ThemedText type="subtitle">Who are you?</ThemedText>
               {error && <ThemedText type="small">{error}</ThemedText>}
               {loading && users.length === 0 && (

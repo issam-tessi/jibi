@@ -15,7 +15,7 @@ export default function NewEntryScreen() {
   return (
     <Sheet title="New entry">
       <EntryForm
-        initial={{ type, minor: 0, categoryId: null, toSavings: true, note: '', date: today() }}
+        initial={{ type, minor: 0, categoryId: null, pot: 'card', toPot: 'savings', note: '', date: today() }}
         submitLabel="Save"
         onSubmit={async (draft) => {
           const err = await saveEntry(draft);

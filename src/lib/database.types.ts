@@ -3,7 +3,7 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type AccountKind = 'main' | 'savings';
+export type AccountKind = 'card' | 'cash' | 'savings';
 export type TransactionKind = 'income' | 'expense' | 'transfer';
 
 export type Database = {
@@ -104,6 +104,21 @@ export type Database = {
         };
         Relationships: [];
       };
+      entries: {
+        Row: {
+          id: string;
+          kind: TransactionKind;
+          amount_cents: number;
+          category_id: string | null;
+          transfer_id: string | null;
+          note: string | null;
+          occurred_on: string;
+          created_at: string;
+          account_kind: AccountKind;
+          to_account_kind: AccountKind | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       list_app_users: {
@@ -116,14 +131,15 @@ export type Database = {
         }[];
       };
       move_money: {
-        Args: { amount: number; to_savings: boolean; note?: string | null; occurred_on?: string };
+        Args: { amount: number; from_pot: AccountKind; to_pot: AccountKind; note?: string | null; occurred_on?: string };
         Returns: string;
       };
       update_transfer: {
         Args: {
           transfer: string;
           amount: number;
-          to_savings: boolean;
+          from_pot: AccountKind;
+          to_pot: AccountKind;
           note?: string | null;
           occurred_on?: string;
         };

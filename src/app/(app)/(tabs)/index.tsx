@@ -23,7 +23,7 @@ export default function HomeScreen() {
       <View style={styles.actions}>
         <ActionButton type="income" icon="＋" label="Add money" />
         <ActionButton type="expense" icon="−" label="Payment" />
-        <ActionButton type="transfer" icon="🐷" label="Savings" />
+        <ActionButton type="transfer" icon="⇄" label="Move" />
       </View>
 
       {error && <ThemedText type="small">{error}</ThemedText>}
