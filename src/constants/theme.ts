@@ -99,5 +99,6 @@ export const Radius = {
   large: 24,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+/** Height of the bottom tab bar (above the safe-area inset). */
+export const BottomTabInset = 64;
 export const MaxContentWidth = 720;

@@ -12,9 +12,11 @@ export type Preferences = {
   accent: number;
   homeView: HomeView;
   weekStart: WeekStart;
+  /** Gym visits a week to aim for. */
+  gymGoal: number;
 };
 
-export const DEFAULT_PREFERENCES: Preferences = { appearance: 'system', accent: 0, homeView: 'recent', weekStart: 1 };
+export const DEFAULT_PREFERENCES: Preferences = { appearance: 'system', accent: 0, homeView: 'recent', weekStart: 1, gymGoal: 3 };
 
 const STORAGE_KEY = 'jibi.preferences';
 

@@ -1,4 +1,4 @@
-import { useRef, useState, type PropsWithChildren } from 'react';
+import { useRef, useState, type PropsWithChildren, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -8,7 +8,7 @@ import {
   View,
   type GestureResponderEvent,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BalanceCard } from '@/components/balance-card';
 import { ThemedText } from '@/components/themed-text';
@@ -17,21 +17,27 @@ import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useCigarettes } from '@/providers/cigarette-provider';
 import { useFinance } from '@/providers/finance-provider';
+import { useGym } from '@/providers/gym-provider';
 
 const PULL_TRIGGER = 70;
 const PULL_MAX = 110;
 
-/** Tab screen shell: the balance card stays pinned at the top while the content scrolls beneath it. Pull down to reload. */
-export function Screen({ children }: PropsWithChildren) {
+/**
+ * Tab screen shell: a pinned header (the balance card unless a tab brings its own) above scrolling content,
+ * clear of the bottom tab bar. Pull down to reload.
+ */
+export function Screen({ children, header }: PropsWithChildren<{ header?: ReactNode }>) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const finance = useFinance();
   const cigarettes = useCigarettes();
+  const gym = useGym();
   const [refreshing, setRefreshing] = useState(false);
 
   async function reload() {
     setRefreshing(true);
     try {
-      await Promise.all([finance.refresh(), cigarettes.refresh()]);
+      await Promise.all([finance.refresh(), cigarettes.refresh(), gym.refresh()]);
     } finally {
       setRefreshing(false);
     }
@@ -42,11 +48,9 @@ export function Screen({ children }: PropsWithChildren) {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-        <View style={styles.header}>
-          <BalanceCard />
-        </View>
+        {header !== null && <View style={styles.header}>{header === undefined ? <BalanceCard /> : header}</View>}
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingBottom: BottomTabInset + insets.bottom + Spacing.five }]}
           keyboardShouldPersistTaps="handled"
           refreshControl={
             Platform.OS === 'web' ? undefined : (
@@ -113,15 +117,13 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, maxWidth: MaxContentWidth },
   header: {
     paddingHorizontal: Spacing.three,
-    // Web shows its tab bar at the top of the page.
-    paddingTop: Platform.OS === 'web' ? 88 : Spacing.two,
+    paddingTop: Spacing.two,
     paddingBottom: Spacing.two,
   },
   content: {
     gap: Spacing.three,
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + Spacing.five,
   },
   pull: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: -Spacing.three },
 });

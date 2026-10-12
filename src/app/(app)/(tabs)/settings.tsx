@@ -1,19 +1,17 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
+import { CategorySettings } from '@/components/category-settings';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, SectionTitle, Segmented } from '@/components/ui';
-import { CategoryPalette, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { usernameFromEmail } from '@/hooks/use-app-users';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/auth-provider';
 import { usePreferences } from '@/providers/preferences-provider';
 import { usePrivacy } from '@/providers/privacy-provider';
-
-const ACCENT_NAMES = ['Blue', 'Orange', 'Teal', 'Amber', 'Pink', 'Green', 'Indigo', 'Red'];
 
 export default function SettingsScreen() {
   const { session } = useAuth();
@@ -34,10 +32,9 @@ export default function SettingsScreen() {
             onChange={(v) => setPreference('appearance', v)}
           />
         </Setting>
-        <Setting label="Accent color" hint="Used for links, highlights and charts.">
-          <AccentPicker />
-        </Setting>
       </Card>
+
+      <CategorySettings />
 
       <SectionTitle title="Home" />
       <Card style={styles.section}>
@@ -96,39 +93,6 @@ function Setting({ label, hint, children }: { label: string; hint?: string; chil
   );
 }
 
-function AccentPicker() {
-  const theme = useTheme();
-  const scheme = useColorScheme();
-  const { accent, setPreference } = usePreferences();
-  const palette = CategoryPalette[scheme === 'dark' ? 'dark' : 'light'];
-
-  return (
-    <View style={styles.swatches}>
-      {palette.map((color, i) => {
-        const selected = i === accent;
-        return (
-          <Pressable
-            key={color}
-            onPress={() => setPreference('accent', i)}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            accessibilityLabel={`${ACCENT_NAMES[i]} accent`}
-            hitSlop={4}
-            style={({ pressed }) => [
-              styles.swatchRing,
-              { borderColor: selected ? theme.text : 'transparent' },
-              pressed && styles.pressed,
-            ]}>
-            <View style={[styles.swatch, { backgroundColor: color }]}>
-              {selected && <ThemedText style={styles.check}>✓</ThemedText>}
-            </View>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 function PrivacySetting() {
   const theme = useTheme();
   const { enabled, locked, available, enable, disable, lock } = usePrivacy();
@@ -181,9 +145,4 @@ const styles = StyleSheet.create({
   settingHeader: { gap: Spacing.half },
   settingText: { flex: 1, gap: Spacing.half },
   privacyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  swatchRing: { borderWidth: 2, borderRadius: 22, padding: 2 },
-  swatch: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  check: { color: '#ffffff', fontSize: 16, lineHeight: 20, fontWeight: 700 },
-  pressed: { opacity: 0.6 },
 });

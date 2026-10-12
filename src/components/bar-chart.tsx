@@ -97,7 +97,7 @@ export function BarChart({ bars, color, selectedKey, onSelect, onHover, referenc
               <ThemedText
                 type="small"
                 themeColor={selectedKey === b.key ? 'text' : 'textMuted'}
-                style={styles.axisText}
+                style={[styles.axisText, styles.xLabel]}
                 numberOfLines={1}>
                 {b.label}
               </ThemedText>
@@ -112,6 +112,8 @@ export function BarChart({ bars, color, selectedKey, onSelect, onHover, referenc
 const styles = StyleSheet.create({
   topLabel: { alignItems: 'flex-end', marginBottom: Spacing.half },
   axisText: { fontSize: 11, lineHeight: 14, fontVariant: ['tabular-nums'] },
+  // Wider than a day's bar so two-digit labels ("10") don't ellipsize; centered, it overflows the cell evenly.
+  xLabel: { minWidth: 32, textAlign: 'center' },
   plot: { borderBottomWidth: 1, justifyContent: 'flex-end' },
   gridline: { position: 'absolute', left: 0, right: 0, height: 1 },
   bars: { flex: 1, flexDirection: 'row', alignItems: 'flex-end' },

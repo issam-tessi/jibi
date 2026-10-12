@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { IconPicker, CATEGORY_ICONS } from '@/components/icon-picker';
-import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Input, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
@@ -14,13 +13,15 @@ function duplicateNameMessage(err: string) {
   return err.includes('duplicate') ? 'You already have a category with that name.' : err;
 }
 
-export default function CategoriesScreen() {
+/** Category list and "new category" form, shown in Settings. */
+export function CategorySettings() {
   const theme = useTheme();
   const { categories, createCategory } = useFinance();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(CATEGORY_ICONS[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
 
   async function add() {
     if (!name.trim()) return setError('Give it a name.');
@@ -29,12 +30,24 @@ export default function CategoriesScreen() {
     const err = await createCategory(name, icon);
     setBusy(false);
     if (err) setError(duplicateNameMessage(err));
-    else setName('');
+    else {
+      setName('');
+      setAdding(false);
+    }
   }
 
   return (
-    <Screen>
-      <SectionTitle title={`Your categories · ${categories.length}`} />
+    <>
+      <SectionTitle
+        title={`Categories · ${categories.length}`}
+        right={
+          <Pressable onPress={() => setAdding(!adding)} hitSlop={8} accessibilityRole="button">
+            <ThemedText type="smallBold" style={{ color: theme.accent }}>
+              {adding ? 'Cancel' : '＋ New'}
+            </ThemedText>
+          </Pressable>
+        }
+      />
       <Card style={styles.list}>
         <ThemedText type="small" themeColor="textSecondary">
           Tap a category to rename it or change its icon.
@@ -48,7 +61,7 @@ export default function CategoriesScreen() {
         ))}
       </Card>
 
-      <SectionTitle title="New category" />
+      {adding && (
       <Card style={styles.form}>
         <IconPicker value={icon} onChange={setIcon} />
         <Input
@@ -65,8 +78,8 @@ export default function CategoriesScreen() {
         )}
         <Button title={`Add ${icon} ${name.trim() || 'category'}`} disabled={busy} onPress={add} />
       </Card>
-
-    </Screen>
+      )}
+    </>
   );
 }
 

@@ -138,6 +138,26 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['cig_smokes']['Insert']>;
         Relationships: [];
       };
+      gym_visits: {
+        Row: {
+          id: string;
+          user_id: string;
+          visited_at: string;
+          workout: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          visited_at?: string;
+          workout?: string | null;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['gym_visits']['Insert']>;
+        Relationships: [];
+      };
       history: {
         Row: {
           id: number;

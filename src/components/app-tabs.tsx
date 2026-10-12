@@ -1,42 +1,124 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { Tabs, TabList, TabSlot, TabTrigger, type TabListProps, type TabTriggerSlotProps } from 'expo-router/ui';
+import type { ComponentType } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Logo } from '@/components/logo';
+import { GymIcon, InsightsIcon, PacksIcon, SettingsIcon } from '@/components/tab-icons';
+import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+type Icon = ComponentType<{ color: string; strong?: boolean }>;
+
+/** Bottom bar: four icon tabs with the jibi logo raised in the middle; the logo is Home. */
 export default function AppTabs() {
-  const colors = useTheme();
-
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundSelected}
-      labelStyle={{ selected: { color: colors.text } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="insights">
-        <NativeTabs.Trigger.Label>Insights</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'chart.pie', selected: 'chart.pie.fill' }} md="pie_chart" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="categories">
-        <NativeTabs.Trigger.Label>Categories</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }}
-          md="category"
-        />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="packs">
-        <NativeTabs.Trigger.Label>Packs</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'flame', selected: 'flame.fill' }} md="smoking_rooms" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="settings">
-        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'gearshape', selected: 'gearshape.fill' }} md="settings" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs>
+      <TabSlot style={styles.slot} />
+      <TabList asChild>
+        <BottomBar>
+          <TabTrigger name="insights" href="/insights" asChild>
+            <IconTab icon={InsightsIcon} label="Insights" />
+          </TabTrigger>
+          <TabTrigger name="gym" href="/gym" asChild>
+            <IconTab icon={GymIcon} label="Gym" />
+          </TabTrigger>
+          <TabTrigger name="index" href="/" asChild>
+            <HomeTab />
+          </TabTrigger>
+          <TabTrigger name="packs" href="/packs" asChild>
+            <IconTab icon={PacksIcon} label="Packs" />
+          </TabTrigger>
+          <TabTrigger name="settings" href="/settings" asChild>
+            <IconTab icon={SettingsIcon} label="Settings" />
+          </TabTrigger>
+        </BottomBar>
+      </TabList>
+    </Tabs>
   );
 }
+
+function BottomBar({ children, style, ...props }: TabListProps) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      {...props}
+      style={[
+        styles.bar,
+        { backgroundColor: theme.card, borderColor: theme.border, paddingBottom: Math.max(insets.bottom, Spacing.two) },
+      ]}>
+      <View style={styles.row}>{children}</View>
+    </View>
+  );
+}
+
+function IconTab({ icon: Icon, label, isFocused, ...props }: TabTriggerSlotProps & { icon: Icon; label: string }) {
+  const theme = useTheme();
+  const color = isFocused ? theme.text : theme.textMuted;
+  return (
+    <Pressable
+      {...props}
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: isFocused }}
+      hitSlop={6}
+      style={({ pressed }) => [styles.tab, pressed && styles.pressed]}>
+      <Icon color={color} strong={isFocused} />
+      <View style={[styles.dot, { backgroundColor: isFocused ? theme.accent : 'transparent' }]} />
+    </Pressable>
+  );
+}
+
+function HomeTab({ isFocused, ...props }: TabTriggerSlotProps) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      {...props}
+      accessibilityRole="tab"
+      accessibilityLabel="Home"
+      accessibilityState={{ selected: isFocused }}
+      style={({ pressed }) => [styles.home, pressed && styles.homePressed]}>
+      <View style={[styles.homeRing, { backgroundColor: theme.card, borderColor: isFocused ? theme.accent : theme.border }]}>
+        <Logo size={52} />
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  slot: { height: '100%' },
+  bar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: Spacing.one,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    height: BottomTabInset - Spacing.one,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+  },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, height: '100%' },
+  dot: { width: 4, height: 4, borderRadius: 2 },
+  pressed: { opacity: 0.6 },
+  home: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', height: '100%' },
+  homeRing: {
+    marginTop: -26,
+    padding: 4,
+    borderRadius: 20,
+    borderWidth: 2,
+    shadowColor: '#2a1b8f',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  homePressed: { transform: [{ scale: 0.94 }] },
+});
