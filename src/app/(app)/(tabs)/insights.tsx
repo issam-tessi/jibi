@@ -10,7 +10,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useCategoryColor, useTheme } from '@/hooks/use-theme';
 import type { Tables } from '@/lib/database.types';
 import { formatMonth, monthRange } from '@/lib/dates';
-import { formatCents } from '@/lib/money';
+import { formatMoney } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 import { useFinance } from '@/providers/finance-provider';
 
@@ -27,7 +27,7 @@ export default function InsightsScreen() {
   const [active, setActive] = useState<string | null>(null);
   const { from, to } = monthRange(cursor.year, cursor.month);
   const isCurrentMonth = cursor.year === now.getFullYear() && cursor.month === now.getMonth();
-  const fmt = (c: number) => formatCents(c, balances.currency);
+  const fmt = (c: number) => formatMoney(c, balances.currency);
 
   useEffect(() => {
     if (!mainAccountId) return;

@@ -3,14 +3,14 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatCents } from '@/lib/money';
+import { formatMoney } from '@/lib/money';
 import { useFinance } from '@/providers/finance-provider';
 
 /** Always-visible summary of the main balance and savings. */
 export function BalanceCard() {
   const theme = useTheme();
   const { balances, loading } = useFinance();
-  const fmt = (cents: number) => (loading ? '—' : formatCents(cents, balances.currency));
+  const fmt = (cents: number) => (loading ? '—' : formatMoney(cents, balances.currency));
 
   return (
     <View style={[styles.card, { backgroundColor: theme.hero }]}>

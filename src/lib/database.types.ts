@@ -116,8 +116,18 @@ export type Database = {
         }[];
       };
       move_money: {
-        Args: { amount: number; to_savings: boolean; note?: string | null };
+        Args: { amount: number; to_savings: boolean; note?: string | null; occurred_on?: string };
         Returns: string;
+      };
+      update_transfer: {
+        Args: {
+          transfer: string;
+          amount: number;
+          to_savings: boolean;
+          note?: string | null;
+          occurred_on?: string;
+        };
+        Returns: undefined;
       };
     };
     Enums: { [_ in never]: never };

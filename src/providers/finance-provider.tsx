@@ -1,6 +1,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 
 import type { Tables } from '@/lib/database.types';
+import { DEFAULT_CURRENCY } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 
 export type Category = Tables<'categories'>;
@@ -9,7 +10,19 @@ export type Entry = Tables<'transactions'> & {
   category: Pick<Category, 'id' | 'name' | 'icon' | 'color_slot'> | null;
 };
 
-type Balances = { main: number; savings: number; currency: string };
+export type EntryType = Entry['kind'];
+
+/** What the entry form produces. `minor` is a positive amount in minor units (millimes for TND). */
+export type EntryDraft = {
+  type: EntryType;
+  minor: number;
+  categoryId: string | null;
+  toSavings: boolean;
+  note: string;
+  date: string;
+};
+
+type Balances ={ main: number; savings: number; currency: string };
 
 type FinanceState = {
   balances: Balances;
@@ -25,9 +38,8 @@ type FinanceState = {
 type FinanceActions = {
   mainAccountId: string | undefined;
   refresh: () => Promise<void>;
-  addIncome: (cents: number, note?: string, occurredOn?: string) => Promise<string | null>;
-  addPayment: (cents: number, categoryId: string | null, note?: string, occurredOn?: string) => Promise<string | null>;
-  moveMoney: (cents: number, toSavings: boolean, note?: string) => Promise<string | null>;
+  /** Creates a new entry, or updates `existing` (whose type can't change). */
+  saveEntry: (draft: EntryDraft, existing?: Entry) => Promise<string | null>;
   categorize: (entryId: string, categoryId: string | null) => Promise<string | null>;
   deleteEntry: (entry: Entry) => Promise<string | null>;
   createCategory: (name: string, icon: string) => Promise<string | null>;
@@ -37,7 +49,7 @@ type FinanceActions = {
 const ENTRY_SELECT = '*, category:categories(id, name, icon, color_slot)';
 
 const INITIAL: FinanceState = {
-  balances: { main: 0, savings: 0, currency: 'EUR' },
+  balances: { main: 0, savings: 0, currency: DEFAULT_CURRENCY },
   categories: [],
   activity: [],
   unsorted: [],
@@ -83,7 +95,7 @@ export function FinanceProvider({ children }: PropsWithChildren) {
       balances: {
         main: main?.balance_cents ?? 0,
         savings: savings?.balance_cents ?? 0,
-        currency: main?.currency ?? 'EUR',
+        currency: main?.currency ?? DEFAULT_CURRENCY,
       },
       categories: categories.data ?? [],
       activity: activity.data ?? [],
@@ -109,33 +121,28 @@ export function FinanceProvider({ children }: PropsWithChildren) {
     return {
       mainAccountId: accountIds.main,
       refresh,
-      addIncome: (cents, note, occurredOn) =>
-        accountIds.main
-          ? run(
-              supabase.from('transactions').insert({
-                account_id: accountIds.main,
-                kind: 'income',
-                amount_cents: cents,
-                note: note?.trim() || null,
-                occurred_on: occurredOn,
-              })
-            )
-          : Promise.resolve('Balance account not found.'),
-      addPayment: (cents, categoryId, note, occurredOn) =>
-        accountIds.main
-          ? run(
-              supabase.from('transactions').insert({
-                account_id: accountIds.main,
-                kind: 'expense',
-                amount_cents: -cents,
-                category_id: categoryId,
-                note: note?.trim() || null,
-                occurred_on: occurredOn,
-              })
-            )
-          : Promise.resolve('Balance account not found.'),
-      moveMoney: (cents, toSavings, note) =>
-        run(supabase.rpc('move_money', { amount: cents, to_savings: toSavings, note: note?.trim() || null })),
+      saveEntry: (draft, existing) => {
+        const note = draft.note.trim() || null;
+        if (draft.type === 'transfer') {
+          const args = { amount: draft.minor, to_savings: draft.toSavings, note, occurred_on: draft.date };
+          return run(
+            existing?.transfer_id
+              ? supabase.rpc('update_transfer', { transfer: existing.transfer_id, ...args })
+              : supabase.rpc('move_money', args)
+          );
+        }
+        const fields = {
+          amount_cents: draft.type === 'expense' ? -draft.minor : draft.minor,
+          category_id: draft.type === 'expense' ? draft.categoryId : null,
+          note,
+          occurred_on: draft.date,
+        };
+        if (existing) return run(supabase.from('transactions').update(fields).eq('id', existing.id));
+        if (!accountIds.main) return Promise.resolve('Balance account not found.');
+        return run(
+          supabase.from('transactions').insert({ ...fields, account_id: accountIds.main, kind: draft.type })
+        );
+      },
       categorize: (entryId, categoryId) =>
         run(supabase.from('transactions').update({ category_id: categoryId }).eq('id', entryId)),
       deleteEntry: (entry) =>

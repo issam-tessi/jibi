@@ -8,7 +8,7 @@ import { Card, SectionTitle } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDay } from '@/lib/dates';
-import { formatCents } from '@/lib/money';
+import { formatMoney } from '@/lib/money';
 import { useFinance, type Entry } from '@/providers/finance-provider';
 
 type EntryType = 'income' | 'expense' | 'transfer';
@@ -34,7 +34,7 @@ export default function HomeScreen() {
             title={`To sort · ${unsorted.length}`}
             right={
               <ThemedText type="small" themeColor="textSecondary">
-                {formatCents(unsortedTotal, balances.currency)}
+                {formatMoney(unsortedTotal, balances.currency)}
               </ThemedText>
             }
           />

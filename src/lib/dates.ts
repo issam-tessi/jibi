@@ -16,6 +16,13 @@ export function yesterday() {
   return toISODate(d);
 }
 
+/** Moves a YYYY-MM-DD date by `days`, never past today. */
+export function shiftDay(isoDate: string, days: number) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const next = toISODate(new Date(y, m - 1, d + days));
+  return next > today() ? today() : next;
+}
+
 /** First day of the month and first day of the next month, as YYYY-MM-DD. */
 export function monthRange(year: number, month: number) {
   return { from: toISODate(new Date(year, month, 1)), to: toISODate(new Date(year, month + 1, 1)) };

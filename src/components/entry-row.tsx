@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useCategoryColor, useTheme } from '@/hooks/use-theme';
-import { formatCents } from '@/lib/money';
+import { formatMoney } from '@/lib/money';
 import { useFinance, type Entry } from '@/providers/finance-provider';
 
 /** How an entry is presented: icon, title, and the color of its icon bubble. */
@@ -57,7 +57,7 @@ export function EntryRow({ entry, onPress }: { entry: Entry; onPress?: () => voi
       </View>
       <ThemedText type="smallBold" style={[styles.amount, { color: amountColor }]}>
         {positive ? '+' : '−'}
-        {formatCents(Math.abs(entry.amount_cents), balances.currency)}
+        {formatMoney(Math.abs(entry.amount_cents), balances.currency)}
       </ThemedText>
     </Pressable>
   );
