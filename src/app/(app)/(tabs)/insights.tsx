@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BarChart, type Bar } from '@/components/bar-chart';
 import { EntryRow } from '@/components/entry-row';
+import { MoneyFlows } from '@/components/money-flows';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Card, Segmented } from '@/components/ui';
@@ -16,7 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { useFinance } from '@/providers/finance-provider';
 
 type ViewRow = Database['public']['Views']['entries']['Row'];
-type Mode = 'days' | 'months';
+type Mode = 'days' | 'months' | 'flows';
 type Month = { year: number; month: number };
 type Slice = { key: string; name: string; icon: string; color: string; value: number };
 
@@ -171,8 +172,9 @@ export default function InsightsScreen() {
     <Screen>
       <Segmented
         options={[
-          { value: 'days', label: 'Day by day' },
-          { value: 'months', label: 'Month by month' },
+          { value: 'days', label: 'Days' },
+          { value: 'months', label: 'Months' },
+          { value: 'flows', label: 'Flows' },
         ]}
         value={mode}
         onChange={(m) => {
@@ -181,7 +183,7 @@ export default function InsightsScreen() {
         }}
       />
 
-      {mode === 'days' && (
+      {mode !== 'months' && (
         <View style={styles.monthRow}>
           <MonthArrow label="‹" onPress={() => goToMonth(shift(cursor, -1))} />
           <ThemedText type="smallBold" style={styles.monthLabel}>
@@ -191,6 +193,10 @@ export default function InsightsScreen() {
         </View>
       )}
 
+      {mode === 'flows' ? (
+        <MoneyFlows year={cursor.year} month={cursor.month} monthRows={monthRows} />
+      ) : (
+      <>
       <Card style={styles.chartCard}>
         <View>
           <ThemedText type="small" themeColor="textSecondary" style={styles.capitalize}>
@@ -294,6 +300,8 @@ export default function InsightsScreen() {
             )}
           </View>
         </Card>
+      )}
+      </>
       )}
     </Screen>
   );
