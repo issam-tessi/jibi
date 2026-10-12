@@ -85,7 +85,17 @@ export type Database = {
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      list_app_users: {
+        Args: never;
+        Returns: {
+          username: string;
+          display_name: string;
+          icon: string;
+          has_password: boolean;
+        }[];
+      };
+    };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
   };

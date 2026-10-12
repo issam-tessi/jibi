@@ -6,13 +6,18 @@ import { ThemedView } from '@/components/themed-view';
 import { TransactionRow } from '@/components/transaction-row';
 import { Button } from '@/components/ui';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { usernameFromEmail, useAppUsers } from '@/hooks/use-app-users';
 import { useFinanceData } from '@/hooks/use-finance-data';
 import { formatCents } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/providers/auth-provider';
 
 export default function OverviewScreen() {
   const { accounts, transactions, error } = useFinanceData();
   const currency = accounts[0]?.currency ?? 'EUR';
+  const { session } = useAuth();
+  const { users } = useAppUsers();
+  const me = users.find((u) => u.username === usernameFromEmail(session?.user.email));
 
   const monthPrefix = new Date().toISOString().slice(0, 7); // YYYY-MM
   const thisMonth = transactions.filter((t) => t.occurred_on.startsWith(monthPrefix));
@@ -23,7 +28,12 @@ export default function OverviewScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText type="subtitle">This month</ThemedText>
+          {me && (
+            <ThemedText type="subtitle">
+              {me.icon} Hi, {me.display_name}
+            </ThemedText>
+          )}
+          <ThemedText type="smallBold">This month</ThemedText>
           {error && <ThemedText type="small">{error}</ThemedText>}
 
           <View style={styles.stats}>
