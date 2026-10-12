@@ -7,3 +7,18 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+/* iOS look on the web: system font, grouped background, no tap flashes. */
+html,
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #f2f2f7;
+}
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background-color: #000000;
+  }
+}

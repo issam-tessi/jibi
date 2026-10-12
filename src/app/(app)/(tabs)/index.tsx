@@ -8,7 +8,7 @@ import { MonthCalendar } from '@/components/month-calendar';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Card, SectionTitle, Segmented } from '@/components/ui';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Database } from '@/lib/database.types';
 import { addDays, formatDay, formatMonth, formatWeek, monthRange, today, weekStart } from '@/lib/dates';
@@ -71,49 +71,44 @@ export default function HomeScreen() {
     view === 'day' ? formatDay(anchor) : view === 'week' ? formatWeek(weekStart(anchor)) : formatMonth(y, m - 1);
 
   return (
-    <Screen>
+    <Screen
+      title="Home"
+      accessory={
+        <View style={styles.tools}>
+          <ToolButton label="↶" hint="Undo" disabled={!lastDone} onPress={() => lastDone && undo(lastDone.groupId)} />
+          <ToolButton label="↷" hint="Redo" disabled={!nextRedo} onPress={() => nextRedo && redo(nextRedo.groupId)} />
+          <ToolButton label="🕘" hint="History" onPress={() => router.push('/history')} />
+        </View>
+      }>
       <View style={styles.actions}>
-        <ActionButton type="income" icon="＋" label="Add money" />
-        <ActionButton type="expense" icon="−" label="Payment" />
+        <ActionButton type="income" icon="＋" label="Add" />
+        <ActionButton type="expense" icon="−" label="Pay" />
         <ActionButton type="transfer" icon="⇄" label="Move" />
       </View>
 
       {error && <ThemedText type="small">{error}</ThemedText>}
 
       {unsorted.length > 0 && (
-        <>
+        <View style={styles.section}>
           <SectionTitle
             title={`To sort · ${unsorted.length}`}
             right={
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText themeColor="textSecondary" style={styles.footnote}>
                 {fmt(unsorted.reduce((s, e) => s - e.amount_cents, 0))}
               </ThemedText>
             }
           />
           <Card style={styles.list}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Tap a payment to give it a category, so your stats stay accurate.
-            </ThemedText>
-            {unsorted.slice(0, 3).map((e) => (
-              <EntryRow key={e.id} entry={e} onPress={() => openEntry(e)} />
+            {unsorted.slice(0, 3).map((e, i, shown) => (
+              <EntryRow key={e.id} entry={e} onPress={() => openEntry(e)} last={i === shown.length - 1} />
             ))}
-            {unsorted.length > 3 && (
-              <ThemedText type="small" themeColor="textSecondary" style={styles.more}>
-                ＋{unsorted.length - 3} more to sort
-              </ThemedText>
-            )}
           </Card>
-        </>
+          <ThemedText themeColor="textSecondary" style={[styles.footnote, styles.sectionFooter]}>
+            {unsorted.length > 3 ? `${unsorted.length - 3} more to sort. ` : ''}Give payments a category so your
+            insights stay accurate.
+          </ThemedText>
+        </View>
       )}
-
-      <View style={styles.activityHeader}>
-        <ThemedText type="smallBold" style={styles.flex}>
-          Activity
-        </ThemedText>
-        <ToolButton label="↶ Undo" disabled={!lastDone} onPress={() => lastDone && undo(lastDone.groupId)} />
-        <ToolButton label="↷ Redo" disabled={!nextRedo} onPress={() => nextRedo && redo(nextRedo.groupId)} />
-        <ToolButton label="🕘 History" onPress={() => router.push('/history')} />
-      </View>
 
       <Segmented
         options={[
@@ -234,41 +229,52 @@ function PeriodSummary({ entries, fmt }: { entries: Entry[]; fmt: (v: number) =>
   );
 }
 
+/** Apple Cash-style round action: tinted circle with the glyph, label underneath. */
 function ActionButton({ type, icon, label }: { type: EntryType; icon: string; label: string }) {
   const theme = useTheme();
-  const tint = type === 'income' ? theme.income : type === 'expense' ? theme.expense : theme.savings;
+  const tint = type === 'income' ? theme.income : type === 'expense' ? theme.expense : theme.accent;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={() => router.push({ pathname: '/entry', params: { type } })}
-      style={({ pressed }) => [
-        styles.action,
-        { backgroundColor: theme.card, borderColor: theme.border },
-        pressed && styles.pressed,
-      ]}>
+      style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
       <View style={[styles.actionIcon, { backgroundColor: tint }]}>
         <ThemedText style={styles.actionIconText}>{icon}</ThemedText>
       </View>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="small" style={styles.actionLabel}>
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
 
-function ToolButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+/** Round toolbar icon button next to the large title. */
+function ToolButton({
+  label,
+  hint,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  hint: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
   const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={hint}
       style={({ pressed }) => [
         styles.tool,
         { backgroundColor: theme.backgroundElement },
         pressed && styles.pressed,
         disabled && styles.disabled,
       ]}>
-      <ThemedText type="small">{label}</ThemedText>
+      <ThemedText style={[styles.toolText, { color: theme.accent }]}>{label}</ThemedText>
     </Pressable>
   );
 }
@@ -303,27 +309,24 @@ function spentByDay(entries: Entry[]) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  actions: { flexDirection: 'row', gap: Spacing.two },
-  action: {
-    flex: 1,
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.three,
-    borderRadius: Radius.large,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  actionIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  actionIconText: { color: '#ffffff', fontSize: 20, lineHeight: 24, fontWeight: 700 },
-  pressed: { opacity: 0.7 },
-  disabled: { opacity: 0.35 },
-  list: { paddingVertical: Spacing.two, gap: Spacing.one },
-  more: { paddingVertical: Spacing.one },
-  activityHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.one },
-  tool: { paddingVertical: Spacing.one + 2, paddingHorizontal: Spacing.two + 2, borderRadius: Radius.small },
+  section: { gap: Spacing.two },
+  footnote: { fontSize: 13, lineHeight: 18 },
+  sectionFooter: { paddingHorizontal: Spacing.three, marginTop: -2 },
+  actions: { flexDirection: 'row', justifyContent: 'space-evenly', paddingVertical: Spacing.one },
+  action: { alignItems: 'center', gap: 6, minWidth: 72 },
+  actionIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  actionIconText: { color: '#ffffff', fontSize: 26, lineHeight: 30, fontWeight: 500 },
+  actionLabel: { fontSize: 13, lineHeight: 18 },
+  pressed: { opacity: 0.6 },
+  disabled: { opacity: 0.3 },
+  list: { padding: 0 },
+  tools: { flexDirection: 'row', gap: Spacing.two },
+  tool: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  toolText: { fontSize: 17, lineHeight: 22, fontWeight: 600 },
   nav: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  navLabel: { flex: 1, textAlign: 'center', fontSize: 16, textTransform: 'capitalize' },
-  arrow: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  navLabel: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: 600, textTransform: 'capitalize' },
+  arrow: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   summary: { flexDirection: 'row', gap: Spacing.two },
-  summaryTile: { flex: 1, gap: Spacing.half, paddingVertical: Spacing.two },
-  calendarHint: { marginTop: Spacing.two, textAlign: 'center' },
+  summaryTile: { flex: 1, gap: Spacing.half, paddingVertical: Spacing.two + 2 },
+  calendarHint: { marginTop: Spacing.two, textAlign: 'center', fontSize: 13 },
 });

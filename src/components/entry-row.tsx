@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
 import { useCategoryColor, useTheme } from '@/hooks/use-theme';
 import { formatMoney } from '@/lib/money';
 import { potIcon, potLabel, transferIcon, transferTitle } from '@/lib/pots';
@@ -36,7 +35,7 @@ export function useEntryPresentation() {
   };
 }
 
-export function EntryRow({ entry, onPress }: { entry: Entry; onPress?: () => void }) {
+export function EntryRow({ entry, onPress, last }: { entry: Entry; onPress?: () => void; last?: boolean }) {
   const theme = useTheme();
   const { balances } = useFinance();
   const present = useEntryPresentation()(entry);
@@ -48,44 +47,40 @@ export function EntryRow({ entry, onPress }: { entry: Entry; onPress?: () => voi
     <Pressable
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <View style={[styles.bubble, { backgroundColor: present.color + '26', borderColor: present.color }]}>
-        <ThemedText style={styles.icon}>{present.icon}</ThemedText>
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.backgroundElement }]}>
+      <View style={[styles.icon, { backgroundColor: present.color }]}>
+        <ThemedText style={styles.iconText}>{present.icon}</ThemedText>
       </View>
-      <View style={styles.info}>
-        <ThemedText type="smallBold" numberOfLines={1}>
-          {present.title}
+      <View style={[styles.body, !last && { borderBottomColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+        <View style={styles.info}>
+          <ThemedText numberOfLines={1}>{present.title}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.detail} numberOfLines={1}>
+            {present.where}
+            {entry.note ? ` · ${entry.note}` : ''}
+          </ThemedText>
+        </View>
+        <ThemedText style={[styles.amount, { color: amountColor }]}>
+          {sign}
+          {formatMoney(amount, balances.currency)}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {present.where}
-          {entry.note ? ` · ${entry.note}` : ''}
-        </ThemedText>
+        {onPress && (
+          <ThemedText themeColor="textMuted" style={styles.chevron}>
+            ›
+          </ThemedText>
+        )}
       </View>
-      <ThemedText type="smallBold" style={[styles.amount, { color: amountColor }]}>
-        {sign}
-        {formatMoney(amount, balances.currency)}
-      </ThemedText>
     </Pressable>
   );
 }
 
+// iOS list cell: 30pt rounded-square icon, 17pt title, 13pt detail, inset hairline divider.
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingVertical: Spacing.two,
-  },
-  pressed: { opacity: 0.6 },
-  bubble: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: { fontSize: 18, lineHeight: 22 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16, gap: 14 },
+  icon: { width: 30, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontSize: 16, lineHeight: 20 },
+  body: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingRight: 14, minHeight: 58 },
   info: { flex: 1 },
+  detail: { fontSize: 13, lineHeight: 18 },
   amount: { fontVariant: ['tabular-nums'] },
+  chevron: { fontSize: 20, lineHeight: 22, marginLeft: 2 },
 });

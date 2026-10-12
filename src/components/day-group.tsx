@@ -15,8 +15,8 @@ const PREVIEW = 3;
 type Mode = 'preview' | 'all' | 'collapsed';
 
 /**
- * One day of entries. Shows the first 3 plus a one-line summary of the rest;
- * tap the summary to see everything, tap the header to fold the day away.
+ * One day of entries as an iOS grouped section. Shows the first 3 plus a summary cell for the rest;
+ * tap the summary to see everything, tap the day header to fold it away.
  */
 export function DayGroup({
   date,
@@ -38,6 +38,7 @@ export function DayGroup({
   const added = entries.filter((e) => e.kind === 'income').reduce((s, e) => s + e.amount_cents, 0);
   const visible = mode === 'all' ? entries : mode === 'preview' ? entries.slice(0, PREVIEW) : [];
   const rest = entries.slice(PREVIEW);
+  const hasFooterCell = (mode === 'preview' && rest.length > 0) || (mode === 'all' && entries.length > PREVIEW);
 
   return (
     <View style={styles.day}>
@@ -46,47 +47,54 @@ export function DayGroup({
         accessibilityRole="button"
         accessibilityLabel={`${formatDay(date)}, ${entries.length} entries. ${mode === 'collapsed' ? 'Expand' : 'Collapse'}`}
         style={styles.header}>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.chevron}>
-          {mode === 'collapsed' ? '▸' : '▾'}
+        <ThemedText themeColor="textSecondary" style={styles.headerText}>
+          {formatDay(date).toUpperCase()}
         </ThemedText>
-        <ThemedText type="smallBold" style={styles.dayLabel}>
-          {formatDay(date)}
+        <ThemedText themeColor="textSecondary" style={[styles.headerText, styles.totals]}>
+          {[added ? `+${fmt(added)}` : null, spent ? `−${fmt(spent)}` : null].filter(Boolean).join('   ')}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.totals}>
-          {[added ? `+${fmt(added)}` : null, spent ? `−${fmt(spent)}` : null, `${entries.length}×`]
-            .filter(Boolean)
-            .join('  ')}
-        </ThemedText>
+        <ThemedText style={[styles.toggle, { color: theme.accent }]}>{mode === 'collapsed' ? 'Show' : 'Hide'}</ThemedText>
       </Pressable>
 
       {mode !== 'collapsed' && (
         <Card style={styles.list}>
-          {visible.map((e) => (
-            <EntryRow key={e.id} entry={e} onPress={() => onOpen(e)} />
+          {visible.map((e, i) => (
+            <EntryRow
+              key={e.id}
+              entry={e}
+              onPress={() => onOpen(e)}
+              last={i === visible.length - 1 && !hasFooterCell}
+            />
           ))}
 
           {mode === 'preview' && rest.length > 0 && (
             <Pressable
               onPress={() => setMode('all')}
               accessibilityRole="button"
-              style={[styles.summary, { backgroundColor: theme.backgroundElement }]}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.summaryText} numberOfLines={1}>
-                ＋{rest.length} more · {summarize(rest, fmt)}
+              style={({ pressed }) => [styles.cell, pressed && { backgroundColor: theme.backgroundElement }]}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.flex} numberOfLines={1}>
+                {rest.length} more · {summarize(rest, fmt)}
               </ThemedText>
-              <ThemedText type="smallBold" style={{ color: theme.accent }}>
-                Show
+              <ThemedText type="small" style={{ color: theme.accent }}>
+                Show All
               </ThemedText>
             </Pressable>
           )}
 
           {mode === 'all' && entries.length > PREVIEW && (
-            <Pressable onPress={() => setMode('preview')} accessibilityRole="button" style={styles.less}>
-              <ThemedText type="smallBold" style={{ color: theme.accent }}>
-                Show less
+            <Pressable onPress={() => setMode('preview')} accessibilityRole="button" style={styles.cell}>
+              <ThemedText type="small" style={[styles.flex, { color: theme.accent }]}>
+                Show Less
               </ThemedText>
             </Pressable>
           )}
         </Card>
+      )}
+
+      {mode === 'collapsed' && (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.footer}>
+          {entries.length} {entries.length === 1 ? 'entry' : 'entries'} hidden
+        </ThemedText>
       )}
     </View>
   );
@@ -106,21 +114,19 @@ function summarize(entries: Entry[], fmt: (v: number) => string) {
 }
 
 const styles = StyleSheet.create({
-  day: { gap: Spacing.one },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.one, paddingVertical: Spacing.one },
-  chevron: { width: 12 },
-  dayLabel: { flex: 1 },
-  totals: { fontVariant: ['tabular-nums'] },
-  list: { paddingVertical: Spacing.two, gap: Spacing.one },
-  summary: {
+  day: { gap: 6 },
+  flex: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two, paddingHorizontal: Spacing.three },
+  headerText: { fontSize: 13, lineHeight: 18, letterSpacing: -0.08 },
+  totals: { flex: 1, textAlign: 'right', fontVariant: ['tabular-nums'] },
+  toggle: { fontSize: 13, lineHeight: 18 },
+  list: { padding: 0 },
+  cell: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    paddingVertical: Spacing.two,
+    paddingVertical: 12,
     paddingHorizontal: Spacing.three,
-    borderRadius: 12,
-    marginTop: Spacing.one,
   },
-  summaryText: { flex: 1 },
-  less: { alignItems: 'center', paddingVertical: Spacing.two },
+  footer: { paddingHorizontal: Spacing.three, fontSize: 13 },
 });

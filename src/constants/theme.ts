@@ -8,42 +8,44 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#0b0b0b',
-    textSecondary: '#52514e',
-    textMuted: '#898781',
-    background: '#f9f9f7',
-    backgroundElement: '#efeee9',
-    backgroundSelected: '#e1e0d9',
+    // iOS system label colors
+    text: '#000000',
+    textSecondary: 'rgba(60,60,67,0.6)',
+    textMuted: 'rgba(60,60,67,0.3)',
+    // iOS grouped backgrounds
+    background: '#f2f2f7',
+    backgroundElement: 'rgba(118,118,128,0.12)',
+    backgroundSelected: 'rgba(118,118,128,0.24)',
     card: '#ffffff',
-    border: 'rgba(11,11,11,0.10)',
-    // Hero balance card
-    hero: '#14213d',
+    border: 'rgba(60,60,67,0.29)',
+    // Wallet-style balance card
+    hero: '#1c1c1e',
     heroText: '#ffffff',
-    heroTextSecondary: '#b9c3d9',
-    // Money semantics (always paired with a sign/icon, never color alone)
-    income: '#006300',
-    expense: '#c23434',
-    savings: '#2a78d6',
-    unsorted: '#a8a69f',
-    accent: '#2a78d6',
+    heroTextSecondary: 'rgba(235,235,245,0.6)',
+    // iOS system colors (always paired with a sign/icon, never color alone)
+    income: '#248a3d',
+    expense: '#d70015',
+    savings: '#5856d6',
+    unsorted: '#8e8e93',
+    accent: '#007aff',
   },
   dark: {
     text: '#ffffff',
-    textSecondary: '#c3c2b7',
-    textMuted: '#898781',
-    background: '#0d0d0d',
-    backgroundElement: '#1f1f1d',
-    backgroundSelected: '#2c2c2a',
-    card: '#1a1a19',
-    border: 'rgba(255,255,255,0.10)',
-    hero: '#1b2a4a',
+    textSecondary: 'rgba(235,235,245,0.6)',
+    textMuted: 'rgba(235,235,245,0.3)',
+    background: '#000000',
+    backgroundElement: 'rgba(118,118,128,0.24)',
+    backgroundSelected: 'rgba(118,118,128,0.36)',
+    card: '#1c1c1e',
+    border: 'rgba(84,84,88,0.65)',
+    hero: '#2c2c2e',
     heroText: '#ffffff',
-    heroTextSecondary: '#a9b6d1',
-    income: '#0ca30c',
-    expense: '#e66767',
-    savings: '#3987e5',
-    unsorted: '#5c5b57',
-    accent: '#3987e5',
+    heroTextSecondary: 'rgba(235,235,245,0.6)',
+    income: '#30d158',
+    expense: '#ff453a',
+    savings: '#5e5ce6',
+    unsorted: '#8e8e93',
+    accent: '#0a84ff',
   },
 } as const;
 
@@ -94,9 +96,10 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  small: 10,
-  medium: 16,
-  large: 24,
+  small: 8,
+  medium: 10,
+  large: 12,
+  card: 20,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;

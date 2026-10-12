@@ -169,7 +169,7 @@ export default function InsightsScreen() {
   }
 
   return (
-    <Screen>
+    <Screen title="Insights">
       <Segmented
         options={[
           { value: 'days', label: 'Days' },

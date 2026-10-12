@@ -34,21 +34,25 @@ export default function CategoriesScreen() {
   }
 
   return (
-    <Screen>
-      <SectionTitle title={`Your categories · ${categories.length}`} />
-      <Card style={styles.list}>
-        <ThemedText type="small" themeColor="textSecondary">
+    <Screen title="Categories">
+      <View style={styles.section}>
+        <SectionTitle title={`Your categories · ${categories.length}`} />
+        <Card style={styles.list}>
+          {categories.map((c, i) => (
+            <CategoryRow
+              key={c.id}
+              category={c}
+              last={i === categories.length - 1}
+              onPress={() => router.push({ pathname: '/category/[id]', params: { id: c.id } })}
+            />
+          ))}
+        </Card>
+        <ThemedText themeColor="textSecondary" style={styles.footer}>
           Tap a category to rename it or change its icon.
         </ThemedText>
-        {categories.map((c) => (
-          <CategoryRow
-            key={c.id}
-            category={c}
-            onPress={() => router.push({ pathname: '/category/[id]', params: { id: c.id } })}
-          />
-        ))}
-      </Card>
+      </View>
 
+      <View style={styles.section}>
       <SectionTitle title="New category" />
       <Card style={styles.form}>
         <IconPicker value={icon} onChange={setIcon} />
@@ -66,43 +70,44 @@ export default function CategoriesScreen() {
         )}
         <Button title={`Add ${icon} ${name.trim() || 'category'}`} disabled={busy} onPress={add} />
       </Card>
+      </View>
 
-      <Button title="Sign out" variant="secondary" onPress={() => supabase.auth.signOut()} />
+      <Button title="Sign Out" variant="danger" onPress={() => supabase.auth.signOut()} />
     </Screen>
   );
 }
 
-function CategoryRow({ category, onPress }: { category: Category; onPress: () => void }) {
-  const colorFor = useCategoryColor();
-  const color = colorFor(category.color_slot);
+function CategoryRow({ category, onPress, last }: { category: Category; onPress: () => void; last: boolean }) {
+  const theme = useTheme();
+  const color = useCategoryColor()(category.color_slot);
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Edit ${category.name}`}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <View style={[styles.bubble, { backgroundColor: color + '26', borderColor: color }]}>
-        <ThemedText style={styles.rowIcon}>{category.icon}</ThemedText>
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.backgroundElement }]}>
+      <View style={[styles.icon, { backgroundColor: color }]}>
+        <ThemedText style={styles.iconText}>{category.icon}</ThemedText>
       </View>
-      <ThemedText style={styles.rowName}>{category.name}</ThemedText>
-      <ThemedText themeColor="textMuted">›</ThemedText>
+      <View style={[styles.rowBody, !last && { borderBottomColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+        <ThemedText style={styles.rowName}>{category.name}</ThemedText>
+        <ThemedText themeColor="textMuted" style={styles.chevron}>
+          ›
+        </ThemedText>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  section: { gap: Spacing.two },
   form: { gap: Spacing.three },
-  list: { paddingVertical: Spacing.three, gap: Spacing.one },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
-  pressed: { opacity: 0.6 },
-  bubble: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowIcon: { fontSize: 16, lineHeight: 20 },
+  list: { padding: 0 },
+  footer: { paddingHorizontal: Spacing.three, fontSize: 13, lineHeight: 18 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16, gap: 14 },
+  icon: { width: 30, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontSize: 16, lineHeight: 20 },
+  rowBody: { flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingRight: 14 },
   rowName: { flex: 1 },
+  chevron: { fontSize: 20, lineHeight: 22 },
 });

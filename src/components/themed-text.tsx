@@ -30,40 +30,47 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
   );
 }
 
+// iOS text styles: body 17, subheadline 15, large title 34, title2 22.
 const styles = StyleSheet.create({
   small: {
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 20,
-    fontWeight: 500,
+    fontWeight: 400,
+    letterSpacing: -0.24,
   },
   smallBold: {
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 20,
-    fontWeight: 700,
+    fontWeight: 600,
+    letterSpacing: -0.24,
   },
   default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: 400,
+    letterSpacing: -0.41,
   },
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
+    fontSize: 34,
+    lineHeight: 41,
+    fontWeight: 700,
+    letterSpacing: 0.37,
   },
   subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: 700,
+    letterSpacing: 0.35,
   },
   link: {
-    lineHeight: 30,
-    fontSize: 14,
+    fontSize: 17,
+    lineHeight: 22,
+    color: '#007aff',
   },
   linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
+    fontSize: 17,
+    lineHeight: 22,
+    color: '#007aff',
   },
   code: {
     fontFamily: Fonts.mono,

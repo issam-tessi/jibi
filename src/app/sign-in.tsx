@@ -26,8 +26,10 @@ export default function SignInScreen() {
             <PasswordStep user={selected} onBack={() => setSelected(null)} />
           ) : (
             <>
-              <Logo size={56} />
-              <ThemedText type="subtitle">Who are you?</ThemedText>
+              <View style={styles.brand}>
+                <Logo size={64} />
+                <ThemedText type="title">Who are you?</ThemedText>
+              </View>
               {error && <ThemedText type="small">{error}</ThemedText>}
               {loading && users.length === 0 && (
                 <ThemedText type="small" themeColor="textSecondary">
@@ -54,15 +56,15 @@ function UserTile({ user, onPress }: { user: AppUser; onPress: () => void }) {
       accessibilityLabel={user.display_name}
       onPress={onPress}
       style={({ pressed }) => [styles.tileWrapper, pressed && styles.pressed]}>
-      <ThemedView type="backgroundElement" style={styles.tile}>
-        <ThemedText style={styles.icon}>{user.icon}</ThemedText>
-        <ThemedText type="smallBold">{user.display_name}</ThemedText>
-        {!user.has_password && (
-          <ThemedText type="small" themeColor="textSecondary">
-            New
-          </ThemedText>
-        )}
-      </ThemedView>
+      <View style={styles.tile}>
+        <ThemedView type="card" style={styles.avatar}>
+          <ThemedText style={styles.avatarIcon}>{user.icon}</ThemedText>
+        </ThemedView>
+        <ThemedText>{user.display_name}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
+          {user.has_password ? ' ' : 'New'}
+        </ThemedText>
+      </View>
     </Pressable>
   );
 }
@@ -145,14 +147,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.four },
   form: { width: '100%', maxWidth: 400, gap: Spacing.three },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
-  tileWrapper: { width: '47%', flexGrow: 1 },
-  tile: {
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: Spacing.four, marginTop: Spacing.three },
+  tileWrapper: { width: '50%' },
+  tile: { alignItems: 'center', gap: 6 },
+  brand: { alignItems: 'center', gap: Spacing.three },
+  avatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: 'center',
-    gap: Spacing.one,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+    justifyContent: 'center',
+    boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
+  } as object,
+  avatarIcon: { fontSize: 48, lineHeight: 58 },
+  caption: { fontSize: 13, lineHeight: 16 },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   icon: { fontSize: 40, lineHeight: 48 },
   pressed: { opacity: 0.7 },
