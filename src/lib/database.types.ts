@@ -92,6 +92,23 @@ export type Database = {
           },
         ];
       };
+      history: {
+        Row: {
+          id: number;
+          user_id: string;
+          group_id: number;
+          at: string;
+          op: 'insert' | 'update' | 'delete';
+          table_name: 'transactions' | 'categories';
+          row_id: string;
+          old_row: Json | null;
+          new_row: Json | null;
+          undone: boolean;
+        };
+        Insert: never;
+        Update: { undone?: boolean };
+        Relationships: [];
+      };
     };
     Views: {
       account_balances: {
@@ -133,6 +150,10 @@ export type Database = {
       move_money: {
         Args: { amount: number; from_pot: AccountKind; to_pot: AccountKind; note?: string | null; occurred_on?: string };
         Returns: string;
+      };
+      replay_history: {
+        Args: { group_id: number; redo: boolean };
+        Returns: undefined;
       };
       update_transfer: {
         Args: {

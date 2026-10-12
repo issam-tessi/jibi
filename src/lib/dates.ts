@@ -43,3 +43,26 @@ export function formatDay(isoDate: string) {
     month: 'short',
   });
 }
+
+/** Adds days to a YYYY-MM-DD date (no clamping). */
+export function addDays(isoDate: string, days: number) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return toISODate(new Date(y, m - 1, d + days));
+}
+
+/** Monday of the week containing the date. */
+export function weekStart(isoDate: string) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const weekday = (new Date(y, m - 1, d).getDay() + 6) % 7;
+  return addDays(isoDate, -weekday);
+}
+
+/** e.g. "6 – 12 Oct" */
+export function formatWeek(startIso: string) {
+  const end = addDays(startIso, 6);
+  const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, opts);
+  };
+  return `${fmt(startIso, { day: 'numeric' })} – ${fmt(end, { day: 'numeric', month: 'short' })}`;
+}

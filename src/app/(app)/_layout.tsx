@@ -10,6 +10,7 @@ export default function AppLayout() {
         <Stack.Screen name="entry" options={{ presentation: 'modal' }} />
         <Stack.Screen name="edit/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="category/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="history" options={{ presentation: 'modal' }} />
       </Stack>
     </FinanceProvider>
   );

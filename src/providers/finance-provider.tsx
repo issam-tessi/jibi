@@ -1,6 +1,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 
 import type { AccountKind, Database, Tables } from '@/lib/database.types';
+import { toActions, type HistoryAction } from '@/lib/history';
 import { DEFAULT_CURRENCY } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 
@@ -40,6 +41,8 @@ type FinanceState = {
   activity: Entry[];
   /** Payments that still need a category, newest first. */
   unsorted: Entry[];
+  /** Recent actions, newest first, for undo/redo. */
+  history: HistoryAction[];
   loading: boolean;
   error: string | null;
 };
@@ -55,6 +58,8 @@ type FinanceActions = {
   createCategory: (name: string, icon: string) => Promise<string | null>;
   updateCategory: (id: string, name: string, icon: string) => Promise<string | null>;
   deleteCategory: (id: string) => Promise<string | null>;
+  undo: (groupId: number) => Promise<string | null>;
+  redo: (groupId: number) => Promise<string | null>;
 };
 
 const INITIAL: FinanceState = {
@@ -62,6 +67,7 @@ const INITIAL: FinanceState = {
   categories: [],
   activity: [],
   unsorted: [],
+  history: [],
   loading: true,
   error: null,
 };
@@ -79,7 +85,7 @@ export function FinanceProvider({ children }: PropsWithChildren) {
   const [potIds, setPotIds] = useState<Partial<Record<Pot, string>>>({});
 
   const refresh = useCallback(async () => {
-    const [balances, categories, activity, unsorted] = await Promise.all([
+    const [balances, categories, activity, unsorted, history] = await Promise.all([
       supabase.from('account_balances').select('*'),
       supabase.from('categories').select('*').order('created_at'),
       supabase
@@ -95,6 +101,7 @@ export function FinanceProvider({ children }: PropsWithChildren) {
         .is('category_id', null)
         .order('occurred_on', { ascending: false })
         .order('created_at', { ascending: false }),
+      supabase.from('history').select('*').order('id', { ascending: false }).limit(400),
     ]);
 
     const rows = balances.data ?? [];
@@ -112,6 +119,11 @@ export function FinanceProvider({ children }: PropsWithChildren) {
       categories: cats,
       activity: attachCategories(activity.data ?? [], cats),
       unsorted: attachCategories(unsorted.data ?? [], cats),
+      history: toActions(history.data ?? [], {
+        potOf: (id) => rows.find((b) => b.id === id)?.kind,
+        categoryName: (id) => cats.find((c) => c.id === id)?.name ?? null,
+        currency: pick('card')?.currency ?? DEFAULT_CURRENCY,
+      }),
       loading: false,
       error: (balances.error ?? categories.error ?? activity.error ?? unsorted.error)?.message ?? null,
     });
@@ -177,6 +189,8 @@ export function FinanceProvider({ children }: PropsWithChildren) {
       updateCategory: (id, name, icon) =>
         run(supabase.from('categories').update({ name: name.trim(), icon }).eq('id', id)),
       deleteCategory: (id) => run(supabase.from('categories').delete().eq('id', id)),
+      undo: (groupId) => run(supabase.rpc('replay_history', { group_id: groupId, redo: false })),
+      redo: (groupId) => run(supabase.rpc('replay_history', { group_id: groupId, redo: true })),
     };
   }, [refresh, potIds, state.categories]);
 
