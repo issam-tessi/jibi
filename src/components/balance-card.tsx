@@ -80,7 +80,9 @@ export function BalanceCard() {
 
       {locked && (
         <ThemedText type="small" style={[styles.hint, { color: theme.heroTextSecondary }]}>
-          {failed ? 'Face ID didn’t work — tap to try again' : 'Tap to unlock with Face ID'}
+          {failed
+            ? 'Face ID didn’t work — tap to try again, or sign out and back in with your password to reset the lock'
+            : 'Tap to unlock with Face ID'}
         </ThemedText>
       )}
     </Pressable>

@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -87,6 +88,9 @@ function PasswordStep({ user, onBack }: { user: AppUser; onBack: () => void }) {
     const { data, error } = isSetup
       ? await supabase.auth.signUp({ email, password })
       : await supabase.auth.signInWithPassword({ email, password });
+    // Signing in with the password proves ownership, so it resets this device's Face ID lock
+    // (escape hatch if the passkey was deleted or Face ID stops working).
+    if (data.user) await AsyncStorage.removeItem(`jibi.lock.enabled.${data.user.id}`).catch(() => {});
     setBusy(false);
 
     if (error) {
