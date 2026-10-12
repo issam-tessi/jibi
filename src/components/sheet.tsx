@@ -3,15 +3,19 @@ import type { PropsWithChildren } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientFill } from '@/components/gradient-fill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 /** Shell for modal screens: title + close button, scrollable body. */
 export function Sheet({ title, children }: PropsWithChildren<{ title: string }>) {
+  const theme = useTheme();
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
   return (
     <ThemedView style={styles.container}>
+      <GradientFill from={theme.background} to={theme.backgroundTint} angle="diagonal" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           style={styles.flex}

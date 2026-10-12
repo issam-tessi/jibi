@@ -11,6 +11,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BalanceCard } from '@/components/balance-card';
+import { GradientFill } from '@/components/gradient-fill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -47,6 +48,7 @@ export function Screen({ children, header }: PropsWithChildren<{ header?: ReactN
 
   return (
     <ThemedView style={styles.container}>
+      <GradientFill from={theme.background} to={theme.backgroundTint} angle="diagonal" />
       <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
         {header !== null && <View style={styles.header}>{header === undefined ? <BalanceCard /> : header}</View>}
         <ScrollView

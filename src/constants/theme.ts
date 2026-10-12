@@ -26,6 +26,9 @@ export const Colors = {
     savings: '#2a78d6',
     unsorted: '#a8a69f',
     accent: '#2a78d6',
+    // Faint brand-indigo tints that page and tab-bar gradients fade into.
+    backgroundTint: '#efedfb',
+    cardTint: '#f5f3ff',
   },
   dark: {
     text: '#ffffff',
@@ -44,6 +47,8 @@ export const Colors = {
     savings: '#3987e5',
     unsorted: '#5c5b57',
     accent: '#3987e5',
+    backgroundTint: '#13112a',
+    cardTint: '#1d1b2e',
   },
 } as const;
 

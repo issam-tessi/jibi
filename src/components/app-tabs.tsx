@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { GradientFill } from '@/components/gradient-fill';
 import { Logo } from '@/components/logo';
 import { GymIcon, InsightsIcon, PacksIcon, SettingsIcon } from '@/components/tab-icons';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -48,6 +49,7 @@ function BottomBar({ children, style, ...props }: TabListProps) {
         styles.bar,
         { backgroundColor: theme.card, borderColor: theme.border, paddingBottom: Math.max(insets.bottom, Spacing.two) },
       ]}>
+      <GradientFill from={theme.card} to={theme.cardTint} />
       <View style={styles.row}>{children}</View>
     </View>
   );
