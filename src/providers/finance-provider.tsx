@@ -1,5 +1,6 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 
+import { CIGS_PER_PACK } from '@/lib/cigarettes';
 import type { AccountKind, Database, Tables } from '@/lib/database.types';
 import { toActions, type HistoryAction } from '@/lib/history';
 import { DEFAULT_CURRENCY } from '@/lib/money';
@@ -30,6 +31,8 @@ export type EntryDraft = {
   toPot: Pot;
   note: string;
   date: string;
+  /** New cigarette payments can record the packs they bought. */
+  cigarettes?: { brand: string; packs: number; place: string };
 };
 
 type Balances = Record<Pot, number> & { currency: string };
@@ -171,7 +174,27 @@ export function FinanceProvider({ children }: PropsWithChildren) {
           occurred_on: draft.date,
         };
         if (existing) return run(supabase.from('transactions').update(fields).eq('id', existing.id));
-        return run(supabase.from('transactions').insert({ ...fields, kind: draft.type }));
+        const cigs = draft.type === 'expense' ? draft.cigarettes : undefined;
+        if (!cigs) return run(supabase.from('transactions').insert({ ...fields, kind: draft.type }));
+        return run(
+          (async () => {
+            const { data, error } = await supabase
+              .from('transactions')
+              .insert({ ...fields, kind: draft.type })
+              .select('id')
+              .single();
+            if (error || !data) return { error };
+            return supabase.from('cig_packs').insert({
+              transaction_id: data.id,
+              brand: cigs.brand,
+              packs: cigs.packs,
+              cigarettes: cigs.packs * CIGS_PER_PACK,
+              price_cents: draft.minor,
+              place: cigs.place.trim() || null,
+              bought_on: draft.date,
+            });
+          })()
+        );
       },
       categorize: (entryId, categoryId) =>
         run(supabase.from('transactions').update({ category_id: categoryId }).eq('id', entryId)),

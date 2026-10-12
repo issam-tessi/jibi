@@ -2,13 +2,16 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { CategoryPicker } from '@/components/category-picker';
+import { CigPurchaseFields, type CigPurchase } from '@/components/cig-purchase';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Input, Segmented } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { BRANDS, isCigaretteCategory } from '@/lib/cigarettes';
 import { formatDay, shiftDay, today } from '@/lib/dates';
 import { amountPlaceholder, formatMoney, minorDigits, parseAmount } from '@/lib/money';
 import { POTS } from '@/lib/pots';
+import { useCigarettes } from '@/providers/cigarette-provider';
 import { useFinance, type EntryDraft, type EntryType, type Pot } from '@/providers/finance-provider';
 import { MASKED, usePrivacy } from '@/providers/privacy-provider';
 
@@ -45,6 +48,19 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Buying cigarettes: record which packs, so the Packs tab can count them.
+  const { packs } = useCigarettes();
+  const [cigs, setCigs] = useState<CigPurchase>({ brand: packs[0]?.brand ?? BRANDS[0].id, packs: 1, place: packs[0]?.place ?? '' });
+  const [suggested, setSuggested] = useState<string | null>(null);
+  const buyingCigs = !lockType && type === 'expense' && isCigaretteCategory(categories.find((c) => c.id === categoryId));
+  function suggestAmount(minor: number) {
+    // Only overwrite an empty amount or one we filled in ourselves.
+    if (amount && amount !== suggested) return;
+    const text = toInput(minor, currency);
+    setAmount(text);
+    setSuggested(text);
+  }
+
   const tint = type === 'income' ? theme.income : type === 'expense' ? theme.expense : theme.savings;
   const sign = type === 'income' ? '+' : type === 'expense' ? '−' : '';
 
@@ -57,7 +73,7 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
 
     setSaving(true);
     setError(null);
-    const err = await onSubmit({ type, minor, categoryId, pot, toPot, note, date });
+    const err = await onSubmit({ type, minor, categoryId, pot, toPot, note, date, cigarettes: buyingCigs ? cigs : undefined });
     setSaving(false);
     if (err) setError(err);
   }
@@ -102,6 +118,10 @@ export function EntryForm({ initial, lockType, submitLabel, onSubmit, footer }: 
           <ThemedText type="smallBold">Category</ThemedText>
           <CategoryPicker categories={categories} value={categoryId} onChange={setCategoryId} allowLater />
         </View>
+      )}
+
+      {buyingCigs && (
+        <CigPurchaseFields value={cigs} onChange={setCigs} currency={currency} onSuggestAmount={suggestAmount} />
       )}
 
       <DateStepper value={date} onChange={setDate} />

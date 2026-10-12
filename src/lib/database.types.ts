@@ -92,6 +92,52 @@ export type Database = {
           },
         ];
       };
+      cig_packs: {
+        Row: {
+          id: string;
+          user_id: string;
+          transaction_id: string | null;
+          brand: string;
+          packs: number;
+          cigarettes: number;
+          price_cents: number | null;
+          place: string | null;
+          bought_on: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          transaction_id?: string | null;
+          brand: string;
+          packs?: number;
+          cigarettes?: number;
+          price_cents?: number | null;
+          place?: string | null;
+          bought_on?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['cig_packs']['Insert']>;
+        Relationships: [];
+      };
+      cig_smokes: {
+        Row: {
+          id: string;
+          user_id: string;
+          brand: string;
+          note: string | null;
+          smoked_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string;
+          brand: string;
+          note?: string | null;
+          smoked_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['cig_smokes']['Insert']>;
+        Relationships: [];
+      };
       history: {
         Row: {
           id: number;
@@ -111,6 +157,10 @@ export type Database = {
       };
     };
     Views: {
+      cig_stock: {
+        Row: { brand: string; bought: number; smoked: number; left_count: number };
+        Relationships: [];
+      };
       account_balances: {
         Row: {
           id: string;

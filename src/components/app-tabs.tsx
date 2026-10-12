@@ -28,6 +28,11 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="packs">
+        <NativeTabs.Trigger.Label>Packs</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'flame', selected: 'flame.fill' }} md="smoking_rooms" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'gearshape', selected: 'gearshape.fill' }} md="settings" />

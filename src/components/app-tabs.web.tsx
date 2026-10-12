@@ -29,6 +29,9 @@ export default function AppTabs() {
           <TabTrigger name="categories" href="/categories" asChild>
             <TabButton>Categories</TabButton>
           </TabTrigger>
+          <TabTrigger name="packs" href="/packs" asChild>
+            <TabButton>Packs</TabButton>
+          </TabTrigger>
           <TabTrigger name="settings" href="/settings" asChild>
             <TabButton>Settings</TabButton>
           </TabTrigger>
