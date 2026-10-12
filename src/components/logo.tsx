@@ -25,8 +25,8 @@ export function Logo({ size = 32 }: { size?: number }) {
         </RadialGradient>
       </Defs>
       <Rect width="1024" height="1024" rx="220" fill="url(#logoBg)" />
-      <G translateY={-37}>
-        <G rotation={-14} origin="512, 392">
+      <G transform="translate(0 -37)">
+        <G transform="rotate(-14 512 392)">
           <Circle cx="512" cy="392" r="168" fill="url(#logoCoin)" stroke="#d68b00" strokeWidth="14" />
           <Path
             d="M532 330 V430 Q532 478 486 478 Q464 478 450 464"

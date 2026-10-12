@@ -6,7 +6,8 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { createContext, use, useRef } from 'react';
+import { Pressable, ScrollView, View, StyleSheet } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -41,9 +42,16 @@ export default function AppTabs() {
   );
 }
 
+/** Lets the active tab scroll itself into view in the scrollable bar. */
+const RevealContext = createContext<(x: number, width: number) => void>(() => {});
+
 export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+  const reveal = use(RevealContext);
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      {...props}
+      onLayout={(e) => isFocused && reveal(e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
+      style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
         style={styles.tabButtonView}>
@@ -56,6 +64,11 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 export function CustomTabList(props: TabListProps) {
+  const scroller = useRef<ScrollView>(null);
+  const viewport = useRef(0);
+  const reveal = (x: number, width: number) =>
+    scroller.current?.scrollTo({ x: Math.max(0, x + width / 2 - viewport.current / 2), animated: true });
+
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
@@ -63,8 +76,17 @@ export function CustomTabList(props: TabListProps) {
           <Logo size={30} />
         </View>
 
-        {props.children}
-
+        <RevealContext value={reveal}>
+          <ScrollView
+            ref={scroller}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            onLayout={(e) => (viewport.current = e.nativeEvent.layout.width)}
+            style={styles.scroller}
+            contentContainerStyle={styles.tabs}>
+            {props.children}
+          </ScrollView>
+        </RevealContext>
       </ThemedView>
     </View>
   );
@@ -81,16 +103,31 @@ const styles = StyleSheet.create({
   },
   innerContainer: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
+    paddingLeft: Spacing.three,
+    paddingRight: Spacing.two,
     borderRadius: Spacing.five,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
   },
   brand: {
-    marginRight: 'auto',
+    flexShrink: 0,
+  },
+  scroller: {
+    flex: 1,
+    minWidth: 0,
+  },
+  // Right-aligned when everything fits, scrolls sideways when it doesn't.
+  tabs: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   pressed: {
     opacity: 0.7,
