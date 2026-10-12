@@ -9,7 +9,7 @@ import { useCategoryColor, useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 import { useFinance, type Category } from '@/providers/finance-provider';
 
-const ICONS = ['🏠', '🛒', '🚌', '🍔', '☕', '💊', '🎮', '👕', '📱', '🎁', '✈️', '🐶', '📚', '💡', '🚗', '📦'];
+const ICONS = ['🛒', '🥖', '☕', '🍔', '🍕', '🥤', '🍰', '🍽️', '🚬', '🍺', '🎮', '🎬', '🎵', '⚽', '🏋️', '🎲', '🏠', '💡', '💧', '🔥', '📶', '📱', '🧾', '🧹', '⛽', '🚗', '🚕', '🚌', '🚆', '🛵', '🅿️', '✈️', '💊', '🏥', '🦷', '👓', '💇', '🧴', '💄', '🧺', '👶', '🍼', '🎓', '📚', '🐶', '🎁', '🎂', '💍', '🐑', '🌙', '🕌', '🏖️', '💸', '🤝', '🏦', '💳', '👕', '👟', '🛍️', '💻', '🛠️', '🧸', '🚭', '📦'];
 
 export default function CategoriesScreen() {
   const theme = useTheme();
