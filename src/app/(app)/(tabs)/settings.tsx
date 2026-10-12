@@ -149,10 +149,10 @@ function PrivacySetting() {
       <Card style={styles.section}>
         <View style={styles.privacyRow}>
           <View style={styles.settingText}>
-            <ThemedText type="smallBold">🔒 Lock balances with Face ID</ThemedText>
+            <ThemedText type="smallBold">👁️ Hide balances with Face ID</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               {available
-                ? 'Hides your Card, Cash and Savings totals until you unlock. Locks again when you leave the app.'
+                ? 'Hides your Card, Cash and Savings totals until you tap the eye. Hides again when you leave the app.'
                 : 'This device or browser doesn’t support Face ID / fingerprint unlock.'}
             </ThemedText>
           </View>
@@ -161,7 +161,7 @@ function PrivacySetting() {
             onValueChange={toggle}
             disabled={busy || (!available && !enabled)}
             trackColor={{ true: theme.accent }}
-            accessibilityLabel="Lock balances with Face ID"
+            accessibilityLabel="Hide balances with Face ID"
           />
         </View>
         {enabled && !locked && <Button title="Hide balances now" variant="secondary" onPress={lock} />}

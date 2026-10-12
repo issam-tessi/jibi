@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { EyeIcon } from '@/components/eye-icon';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -49,9 +50,9 @@ export function BalanceCard() {
             onPress={locked ? tryUnlock : lock}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel={locked ? 'Unlock with Face ID' : 'Hide balances'}
+            accessibilityLabel={locked ? 'Show balances with Face ID' : 'Hide balances'}
             style={styles.lockButton}>
-            <ThemedText style={styles.lockIcon}>{locked ? '🔒' : '🔓'}</ThemedText>
+            <EyeIcon closed={locked} color={theme.heroText} />
           </Pressable>
         )}
       </View>
@@ -82,7 +83,7 @@ export function BalanceCard() {
         <ThemedText type="small" style={[styles.hint, { color: theme.heroTextSecondary }]}>
           {failed
             ? 'Face ID didn’t work — tap to try again, or sign out and back in with your password to reset the lock'
-            : 'Tap to unlock with Face ID'}
+            : 'Tap to show with Face ID'}
         </ThemedText>
       )}
     </Pressable>
@@ -108,7 +109,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
-  lockIcon: { fontSize: 18, lineHeight: 22 },
   pots: { flexDirection: 'row', gap: Spacing.two },
   pot: {
     flex: 1,
