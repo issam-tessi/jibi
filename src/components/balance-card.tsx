@@ -34,9 +34,7 @@ export function BalanceCard() {
       style={[styles.card, { backgroundColor: theme.hero }]}>
       <View style={styles.totalRow}>
         <View style={styles.flex}>
-          <ThemedText type="small" style={{ color: theme.heroTextSecondary }}>
-            Balance
-          </ThemedText>
+          <ThemedText style={[styles.label, { color: theme.heroTextSecondary }]}>Balance</ThemedText>
           <ThemedText
             style={[styles.amount, { color: theme.heroText }, locked && styles.masked]}
             numberOfLines={1}
@@ -52,7 +50,7 @@ export function BalanceCard() {
             accessibilityRole="button"
             accessibilityLabel={locked ? 'Show balances with Face ID' : 'Hide balances'}
             style={styles.lockButton}>
-            <EyeIcon closed={locked} color={theme.heroText} />
+            <EyeIcon closed={locked} color={theme.heroText} size={18} />
           </Pressable>
         )}
       </View>
@@ -61,13 +59,13 @@ export function BalanceCard() {
         {POTS.map((p) => (
           <View
             key={p.value}
+            accessible
+            accessibilityLabel={`${p.label}: ${locked ? 'hidden' : fmt(balances[p.value])}`}
             style={[
               styles.pot,
               { backgroundColor: p.value === 'savings' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.10)' },
             ]}>
-            <ThemedText type="small" style={{ color: theme.heroTextSecondary }} numberOfLines={1}>
-              {p.icon} {p.label}
-            </ThemedText>
+            <ThemedText style={styles.potIcon}>{p.icon}</ThemedText>
             <ThemedText
               type="smallBold"
               style={[styles.potAmount, { color: theme.heroText }]}
@@ -80,7 +78,7 @@ export function BalanceCard() {
       </View>
 
       {locked && (
-        <ThemedText type="small" style={[styles.hint, { color: theme.heroTextSecondary }]}>
+        <ThemedText style={[styles.hint, { color: theme.heroTextSecondary }]}>
           {failed
             ? 'Face ID didn’t work — tap to try again, or sign out and back in with your password to reset the lock'
             : 'Tap to show with Face ID'}
@@ -92,31 +90,35 @@ export function BalanceCard() {
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.three,
+    gap: Spacing.two,
     borderRadius: Radius.large,
-    padding: Spacing.three,
-    paddingHorizontal: Spacing.four - Spacing.one,
+    paddingVertical: Spacing.two + Spacing.one,
+    paddingHorizontal: Spacing.three,
   },
-  flex: { flex: 1, gap: Spacing.half },
+  flex: { flex: 1 },
   totalRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  amount: { fontSize: 34, lineHeight: 40, fontWeight: 700, fontVariant: ['tabular-nums'] },
+  label: { fontSize: 12, lineHeight: 16, fontWeight: 500 },
+  amount: { fontSize: 26, lineHeight: 32, fontWeight: 700, fontVariant: ['tabular-nums'] },
   masked: { letterSpacing: 2 },
   lockButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
-  pots: { flexDirection: 'row', gap: Spacing.two },
+  pots: { flexDirection: 'row', gap: Spacing.two - Spacing.half },
   pot: {
     flex: 1,
-    gap: Spacing.half,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.two + Spacing.one,
-    borderRadius: Radius.medium,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.one + Spacing.half,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.small,
   },
-  potAmount: { fontSize: 15, lineHeight: 20, fontVariant: ['tabular-nums'] },
-  hint: { textAlign: 'center', marginTop: -Spacing.one },
+  potIcon: { fontSize: 13, lineHeight: 18 },
+  potAmount: { flex: 1, fontSize: 13, lineHeight: 18, fontVariant: ['tabular-nums'] },
+  hint: { fontSize: 12, lineHeight: 16, textAlign: 'center' },
 });
