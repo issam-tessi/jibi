@@ -5,12 +5,14 @@
 
 import { CategoryPalette, Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePreferences } from '@/providers/preferences-provider';
 
 export function useTheme() {
   const scheme = useColorScheme();
+  const { accent } = usePreferences();
   const theme = scheme === 'dark' ? 'dark' : 'light';
 
-  return Colors[theme];
+  return { ...Colors[theme], accent: CategoryPalette[theme][accent] ?? Colors[theme].accent };
 }
 
 /** Resolves a category palette slot (1..8) to a color for the current mode; null slot -> "Other" gray. */

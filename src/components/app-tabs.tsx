@@ -27,6 +27,11 @@ export default function AppTabs() {
           md="category"
         />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="settings">
+        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'gearshape', selected: 'gearshape.fill' }} md="settings" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

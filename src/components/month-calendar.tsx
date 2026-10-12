@@ -3,16 +3,17 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
+import { usePreferences } from '@/providers/preferences-provider';
 import { toISODate, today } from '@/lib/dates';
 
-const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // Sunday first, like Date#getDay
 // Sequential blue ramp (light -> dark) for "how much was spent that day".
 const RAMP = {
   light: ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf'],
   dark: ['#104281', '#184f95', '#1c5cab', '#2a78d6', '#3987e5'],
 };
 
-/** Month grid (Monday first). Each day shows how much was spent, tinted by amount; tap a day to open it. */
+/** Month grid (week start from Settings). Each day shows how much was spent, tinted by amount; tap a day to open it. */
 export function MonthCalendar({
   year,
   month,
@@ -28,10 +29,12 @@ export function MonthCalendar({
 }) {
   const theme = useTheme();
   const scheme = useColorScheme();
+  const { weekStart } = usePreferences();
   const ramp = RAMP[scheme === 'dark' ? 'dark' : 'light'];
   const todayIso = today();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const offset = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+  const offset = (new Date(year, month, 1).getDay() + 7 - weekStart) % 7;
+  const weekdays = [...WEEKDAYS.slice(weekStart), ...WEEKDAYS.slice(0, weekStart)];
   const max = Math.max(...spentByDay.values(), 1);
 
   const cells: (string | null)[] = [
@@ -42,7 +45,7 @@ export function MonthCalendar({
 
   return (
     <View style={styles.grid}>
-      {WEEKDAYS.map((d, i) => (
+      {weekdays.map((d, i) => (
         <View key={`h${i}`} style={styles.cell}>
           <ThemedText type="small" themeColor="textMuted" style={styles.weekday}>
             {d}

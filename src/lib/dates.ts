@@ -50,10 +50,10 @@ export function addDays(isoDate: string, days: number) {
   return toISODate(new Date(y, m - 1, d + days));
 }
 
-/** Monday of the week containing the date. */
-export function weekStart(isoDate: string) {
+/** First day (Monday by default, or Sunday with `startsOn = 0`) of the week containing the date. */
+export function weekStart(isoDate: string, startsOn: 0 | 1 = 1) {
   const [y, m, d] = isoDate.split('-').map(Number);
-  const weekday = (new Date(y, m - 1, d).getDay() + 6) % 7;
+  const weekday = (new Date(y, m - 1, d).getDay() + 7 - startsOn) % 7;
   return addDays(isoDate, -weekday);
 }
 

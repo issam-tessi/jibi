@@ -15,15 +15,16 @@ import { addDays, formatDay, formatMonth, formatWeek, monthRange, today, weekSta
 import { formatMoney, minorDigits } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 import { useFinance, type Entry } from '@/providers/finance-provider';
+import { usePreferences, type HomeView } from '@/providers/preferences-provider';
 
 type EntryType = 'income' | 'expense' | 'transfer';
-type HomeView = 'recent' | 'day' | 'week' | 'month';
 type ViewRow = Database['public']['Views']['entries']['Row'];
 
 export default function HomeScreen() {
   const { activity, unsorted, balances, error, loading, history, undo, redo, withCategories } = useFinance();
   const theme = useTheme();
-  const [view, setView] = useState<HomeView>('recent');
+  const { homeView, weekStart: startsOn } = usePreferences();
+  const [view, setView] = useState<HomeView>(homeView);
   const [anchor, setAnchor] = useState(today()); // the day the Day/Week/Month views are centred on
   const [rangeRows, setRangeRows] = useState<ViewRow[]>([]);
   const fmt = (v: number) => formatMoney(v, balances.currency);
@@ -35,7 +36,7 @@ export default function HomeScreen() {
     view === 'day'
       ? { from: anchor, to: addDays(anchor, 1) }
       : view === 'week'
-        ? { from: weekStart(anchor), to: addDays(weekStart(anchor), 7) }
+        ? { from: weekStart(anchor, startsOn), to: addDays(weekStart(anchor, startsOn), 7) }
         : monthRange(y, m - 1);
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export default function HomeScreen() {
   }
   const atPresent = range.to > today();
   const navLabel =
-    view === 'day' ? formatDay(anchor) : view === 'week' ? formatWeek(weekStart(anchor)) : formatMonth(y, m - 1);
+    view === 'day' ? formatDay(anchor) : view === 'week' ? formatWeek(weekStart(anchor, startsOn)) : formatMonth(y, m - 1);
 
   return (
     <Screen>

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { IconPicker, CATEGORY_ICONS } from '@/components/icon-picker';
 import { Screen } from '@/components/screen';
@@ -8,9 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Input, SectionTitle } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useCategoryColor, useTheme } from '@/hooks/use-theme';
-import { supabase } from '@/lib/supabase';
 import { useFinance, type Category } from '@/providers/finance-provider';
-import { usePrivacy } from '@/providers/privacy-provider';
 
 function duplicateNameMessage(err: string) {
   return err.includes('duplicate') ? 'You already have a category with that name.' : err;
@@ -68,54 +66,7 @@ export default function CategoriesScreen() {
         <Button title={`Add ${icon} ${name.trim() || 'category'}`} disabled={busy} onPress={add} />
       </Card>
 
-      <PrivacySetting />
-
-      <Button title="Sign out" variant="secondary" onPress={() => supabase.auth.signOut()} />
     </Screen>
-  );
-}
-
-function PrivacySetting() {
-  const theme = useTheme();
-  const { enabled, available, enable, disable } = usePrivacy();
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-
-  async function toggle(next: boolean) {
-    setBusy(true);
-    setMessage(null);
-    const ok = next ? await enable() : await disable();
-    setBusy(false);
-    if (!ok) setMessage(next ? 'Face ID was cancelled or isn’t available.' : 'Face ID is needed to turn the lock off.');
-  }
-
-  return (
-    <>
-      <SectionTitle title="Privacy" />
-      <Card style={styles.privacy}>
-        <View style={styles.privacyRow}>
-          <View style={styles.privacyText}>
-            <ThemedText type="smallBold">🔒 Lock balances with Face ID</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {available
-                ? 'Hides your Card, Cash and Savings totals until you unlock. Locks again when you leave the app.'
-                : 'This device or browser doesn’t support Face ID / fingerprint unlock.'}
-            </ThemedText>
-          </View>
-          <Switch
-            value={enabled}
-            onValueChange={toggle}
-            disabled={busy || (!available && !enabled)}
-            accessibilityLabel="Lock balances with Face ID"
-          />
-        </View>
-        {message && (
-          <ThemedText type="small" style={{ color: theme.expense }}>
-            {message}
-          </ThemedText>
-        )}
-      </Card>
-    </>
   );
 }
 
@@ -138,9 +89,6 @@ function CategoryRow({ category, onPress }: { category: Category; onPress: () =>
 }
 
 const styles = StyleSheet.create({
-  privacy: { gap: Spacing.two },
-  privacyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  privacyText: { flex: 1, gap: Spacing.half },
   form: { gap: Spacing.three },
   list: { paddingVertical: Spacing.three, gap: Spacing.one },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
