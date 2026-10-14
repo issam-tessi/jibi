@@ -5,6 +5,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type AccountKind = 'card' | 'cash' | 'savings';
 export type TransactionKind = 'income' | 'expense' | 'transfer';
+export type PrayerName = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
+export type PrayerStatus = 'jamaah' | 'ontime' | 'late' | 'missed';
 
 export type Database = {
   public: {
@@ -157,6 +159,32 @@ export type Database = {
         };
         Update: Partial<Database['public']['Tables']['gym_visits']['Insert']>;
         Relationships: [];
+      };
+      prayer_logs: {
+        Row: { id: string; user_id: string; day: string; prayer: PrayerName; status: PrayerStatus; logged_at: string };
+        Insert: { id?: string; user_id?: string; day: string; prayer: PrayerName; status: PrayerStatus; logged_at?: string };
+        Update: Partial<Database['public']['Tables']['prayer_logs']['Insert']>;
+        Relationships: [];
+      };
+      workouts: {
+        Row: { id: string; user_id: string; performed_at: string; name: string | null; note: string | null; created_at: string };
+        Insert: { id?: string; user_id?: string; performed_at?: string; name?: string | null; note?: string | null; created_at?: string };
+        Update: Partial<Database['public']['Tables']['workouts']['Insert']>;
+        Relationships: [];
+      };
+      workout_sets: {
+        Row: { id: string; user_id: string; workout_id: string; exercise: string; position: number; weight_kg: number | null; reps: number };
+        Insert: { id?: string; user_id?: string; workout_id: string; exercise: string; position?: number; weight_kg?: number | null; reps: number };
+        Update: Partial<Database['public']['Tables']['workout_sets']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'workout_sets_workout_id_fkey';
+            columns: ['workout_id'];
+            isOneToOne: false;
+            referencedRelation: 'workouts';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       history: {
         Row: {

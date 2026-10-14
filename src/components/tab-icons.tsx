@@ -52,3 +52,14 @@ export function SettingsIcon({ color, size = 26, strong }: IconProps) {
     </Svg>
   );
 }
+
+export function ModulesIcon({ color, size = 26, strong }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...base(color, strong)}>
+      <Rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+      <Rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+      <Rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+      <Circle cx="17.25" cy="17.25" r="3.75" />
+    </Svg>
+  );
+}

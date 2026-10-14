@@ -19,6 +19,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { useCigarettes } from '@/providers/cigarette-provider';
 import { useFinance } from '@/providers/finance-provider';
 import { useGym } from '@/providers/gym-provider';
+import { usePrayers } from '@/providers/prayer-provider';
+import { useWorkouts } from '@/providers/workout-provider';
 
 const PULL_TRIGGER = 70;
 const PULL_MAX = 110;
@@ -33,12 +35,14 @@ export function Screen({ children, header }: PropsWithChildren<{ header?: ReactN
   const finance = useFinance();
   const cigarettes = useCigarettes();
   const gym = useGym();
+  const prayers = usePrayers();
+  const workouts = useWorkouts();
   const [refreshing, setRefreshing] = useState(false);
 
   async function reload() {
     setRefreshing(true);
     try {
-      await Promise.all([finance.refresh(), cigarettes.refresh(), gym.refresh()]);
+      await Promise.all([finance.refresh(), cigarettes.refresh(), gym.refresh(), prayers.refresh(), workouts.refresh()]);
     } finally {
       setRefreshing(false);
     }

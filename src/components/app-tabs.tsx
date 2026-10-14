@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GradientFill } from '@/components/gradient-fill';
 import { Logo } from '@/components/logo';
-import { GymIcon, InsightsIcon, PacksIcon, SettingsIcon } from '@/components/tab-icons';
+import { GymIcon, InsightsIcon, ModulesIcon, SettingsIcon } from '@/components/tab-icons';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -27,8 +27,8 @@ export default function AppTabs() {
           <TabTrigger name="index" href="/" asChild>
             <HomeTab />
           </TabTrigger>
-          <TabTrigger name="packs" href="/packs" asChild>
-            <IconTab icon={PacksIcon} label="Packs" />
+          <TabTrigger name="modules" href="/modules" asChild>
+            <IconTab icon={ModulesIcon} label="Modules" />
           </TabTrigger>
           <TabTrigger name="settings" href="/settings" asChild>
             <IconTab icon={SettingsIcon} label="Settings" />

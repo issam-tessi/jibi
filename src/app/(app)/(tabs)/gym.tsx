@@ -8,10 +8,10 @@ import { Button, Card, Chip, Input, SectionTitle } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { addDays, formatDay, monthRange, shiftDay, toISODate, today, weekStart as weekStartOf } from '@/lib/dates';
+import { WORKOUT_TYPES as WORKOUTS } from '@/lib/workouts';
 import { useGym, type GymVisit } from '@/providers/gym-provider';
 import { usePreferences } from '@/providers/preferences-provider';
 
-const WORKOUTS = ['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'Full body', 'Cardio', 'Abs'];
 const HEATMAP_WEEKS = 12;
 const SLOTS = [
   { key: 'morning', label: '🌅 Morning', from: 5, to: 12 },

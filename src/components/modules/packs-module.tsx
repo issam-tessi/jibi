@@ -4,7 +4,6 @@ import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { BarChart } from '@/components/bar-chart';
 import { OpenPack, PackArt } from '@/components/cig-art';
-import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Card, SectionTitle } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
@@ -17,7 +16,8 @@ import { useFinance } from '@/providers/finance-provider';
 
 const CHART_DAYS = 14;
 
-export default function PacksScreen() {
+/** Cigarette stash, smoking stats, price book and log. */
+export function PacksModule() {
   const theme = useTheme();
   const { stock, packs, smokes, error } = useCigarettes();
   const { categories, balances, createCategory } = useFinance();
@@ -34,7 +34,7 @@ export default function PacksScreen() {
   const total = Object.values(stock).reduce((s, n) => s + Math.max(0, n), 0);
 
   return (
-    <Screen>
+    <>
       {error && <ThemedText type="small">{error}</ThemedText>}
 
       <View style={styles.actions}>
@@ -104,7 +104,7 @@ export default function PacksScreen() {
       <Stats smokes={smokes} packs={packs} fmt={fmt} />
       <PriceBook packs={packs} fmt={fmt} />
       <SmokeLog smokes={smokes} />
-    </Screen>
+    </>
   );
 }
 
