@@ -1,17 +1,22 @@
 import { Tabs, TabList, TabSlot, TabTrigger, type TabListProps, type TabTriggerSlotProps } from 'expo-router/ui';
-import type { ComponentType } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { createContext, use, useRef, type ComponentType } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GradientFill } from '@/components/gradient-fill';
 import { Logo } from '@/components/logo';
-import { GymIcon, InsightsIcon, ModulesIcon, SettingsIcon } from '@/components/tab-icons';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { GymIcon, InsightsIcon, PacksIcon, PrayerIcon, SettingsIcon, WorkoutsIcon } from '@/components/tab-icons';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Icon = ComponentType<{ color: string; strong?: boolean }>;
 
-/** Bottom bar: four icon tabs with the jibi logo raised in the middle; the logo is Home. */
+const TAB_W = 60;
+const HOME_W = 76;
+/** Room above the bar for the raised logo (the scroll view would clip anything outside it). */
+const LIFT = 26;
+
+/** Scrollable bottom bar of icon tabs with the jibi logo raised in the middle; the logo is Home. */
 export default function AppTabs() {
   return (
     <Tabs>
@@ -24,11 +29,17 @@ export default function AppTabs() {
           <TabTrigger name="gym" href="/gym" asChild>
             <IconTab icon={GymIcon} label="Gym" />
           </TabTrigger>
+          <TabTrigger name="packs" href="/packs" asChild>
+            <IconTab icon={PacksIcon} label="Packs" />
+          </TabTrigger>
           <TabTrigger name="index" href="/" asChild>
             <HomeTab />
           </TabTrigger>
-          <TabTrigger name="modules" href="/modules" asChild>
-            <IconTab icon={ModulesIcon} label="Modules" />
+          <TabTrigger name="prayer" href="/prayer" asChild>
+            <IconTab icon={PrayerIcon} label="Prayer" />
+          </TabTrigger>
+          <TabTrigger name="workouts" href="/workouts" asChild>
+            <IconTab icon={WorkoutsIcon} label="Workouts" />
           </TabTrigger>
           <TabTrigger name="settings" href="/settings" asChild>
             <IconTab icon={SettingsIcon} label="Settings" />
@@ -39,32 +50,51 @@ export default function AppTabs() {
   );
 }
 
+/** Lets the focused tab scroll itself into the middle of the bar. */
+const RevealContext = createContext<(x: number, width: number) => void>(() => {});
+
 function BottomBar({ children, style, ...props }: TabListProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const scroller = useRef<ScrollView>(null);
+  const viewport = useRef(0);
+  const reveal = (x: number, width: number) =>
+    scroller.current?.scrollTo({ x: Math.max(0, x + width / 2 - viewport.current / 2), animated: true });
+
   return (
-    <View
-      {...props}
-      style={[
-        styles.bar,
-        { backgroundColor: theme.card, borderColor: theme.border, paddingBottom: Math.max(insets.bottom, Spacing.two) },
-      ]}>
-      <GradientFill from={theme.card} to={theme.cardTint} />
-      <View style={styles.row}>{children}</View>
+    <View {...props} style={styles.bar} pointerEvents="box-none">
+      <View
+        style={[
+          styles.background,
+          { top: LIFT, backgroundColor: theme.card, borderColor: theme.border },
+        ]}>
+        <GradientFill from={theme.card} to={theme.cardTint} />
+      </View>
+      <RevealContext value={reveal}>
+        <ScrollView
+          ref={scroller}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onLayout={(e) => (viewport.current = e.nativeEvent.layout.width)}
+          contentContainerStyle={[styles.row, { paddingBottom: Math.max(insets.bottom, Spacing.two) }]}>
+          {children}
+        </ScrollView>
+      </RevealContext>
     </View>
   );
 }
 
 function IconTab({ icon: Icon, label, isFocused, ...props }: TabTriggerSlotProps & { icon: Icon; label: string }) {
   const theme = useTheme();
+  const reveal = use(RevealContext);
   const color = isFocused ? theme.text : theme.textMuted;
   return (
     <Pressable
       {...props}
+      onLayout={(e) => isFocused && reveal(e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
       accessibilityRole="tab"
       accessibilityLabel={label}
       accessibilityState={{ selected: isFocused }}
-      hitSlop={6}
       style={({ pressed }) => [styles.tab, pressed && styles.pressed]}>
       <Icon color={color} strong={isFocused} />
       <View style={[styles.dot, { backgroundColor: isFocused ? theme.accent : 'transparent' }]} />
@@ -74,9 +104,12 @@ function IconTab({ icon: Icon, label, isFocused, ...props }: TabTriggerSlotProps
 
 function HomeTab({ isFocused, ...props }: TabTriggerSlotProps) {
   const theme = useTheme();
+  const reveal = use(RevealContext);
   return (
     <Pressable
       {...props}
+      // The bar opens scrolled so the logo sits in the middle (a focused tab after it then takes over).
+      onLayout={(e) => reveal(e.nativeEvent.layout.x, e.nativeEvent.layout.width)}
       accessibilityRole="tab"
       accessibilityLabel="Home"
       accessibilityState={{ selected: isFocused }}
@@ -90,29 +123,21 @@ function HomeTab({ isFocused, ...props }: TabTriggerSlotProps) {
 
 const styles = StyleSheet.create({
   slot: { height: '100%' },
-  bar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: Spacing.one,
-  },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  background: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: StyleSheet.hairlineWidth },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    height: BottomTabInset - Spacing.one,
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingTop: LIFT,
+    paddingHorizontal: Spacing.two,
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, height: '100%' },
+  tab: { width: TAB_W, height: BottomTabInset - Spacing.one, alignItems: 'center', justifyContent: 'center', gap: 4 },
   dot: { width: 4, height: 4, borderRadius: 2 },
   pressed: { opacity: 0.6 },
-  home: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', height: '100%' },
+  home: { width: HOME_W, height: BottomTabInset - Spacing.one, alignItems: 'center', justifyContent: 'flex-start' },
   homeRing: {
-    marginTop: -26,
+    marginTop: -LIFT,
     padding: 4,
     borderRadius: 20,
     borderWidth: 2,

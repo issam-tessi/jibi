@@ -16,11 +16,9 @@ export type Preferences = {
   gymGoal: number;
   /** City used for prayer times. */
   prayerCity: string;
-  /** Last module opened in the Modules tab. */
-  module: 'packs' | 'prayer' | 'workouts';
 };
 
-export const DEFAULT_PREFERENCES: Preferences = { appearance: 'system', accent: 0, homeView: 'recent', weekStart: 1, gymGoal: 3, prayerCity: 'tunis', module: 'packs' };
+export const DEFAULT_PREFERENCES: Preferences = { appearance: 'system', accent: 0, homeView: 'recent', weekStart: 1, gymGoal: 3, prayerCity: 'tunis' };
 
 const STORAGE_KEY = 'jibi.preferences';
 

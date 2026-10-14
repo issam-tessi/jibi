@@ -53,13 +53,22 @@ export function SettingsIcon({ color, size = 26, strong }: IconProps) {
   );
 }
 
-export function ModulesIcon({ color, size = 26, strong }: IconProps) {
+export function PrayerIcon({ color, size = 26, strong }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" {...base(color, strong)}>
-      <Rect x="3" y="3" width="7.5" height="7.5" rx="2" />
-      <Rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
-      <Rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
-      <Circle cx="17.25" cy="17.25" r="3.75" />
+      <Path d="M15.5 3.2A8.5 8.5 0 1 0 20.8 14a6.8 6.8 0 0 1-5.3-10.8z" />
+      <Path d="M18.5 4.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z" />
+    </Svg>
+  );
+}
+
+export function WorkoutsIcon({ color, size = 26, strong }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...base(color, strong)}>
+      <Rect x="5" y="4" width="14" height="17" rx="2" />
+      <Path d="M9 2.5h6v3H9z" />
+      <Path d="M8.5 10.5l1.5 1.5 3-3" />
+      <Path d="M8.5 16h7" />
     </Svg>
   );
 }
