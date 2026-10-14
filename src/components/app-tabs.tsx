@@ -141,11 +141,6 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 20,
     borderWidth: 2,
-    shadowColor: '#2a1b8f',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
   },
   homePressed: { transform: [{ scale: 0.94 }] },
 });

@@ -1,15 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#5b4cf0"/><stop offset="1" stop-color="#2a1b8f"/>
-  </linearGradient>
-  <radialGradient id="shine" cx="0.25" cy="0.15" r="0.8">
-    <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-  </radialGradient>
-  <linearGradient id="coin" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#ffd76a"/><stop offset="1" stop-color="#ffb21e"/>
-  </linearGradient></defs><g transform="translate(0 -40)">
-  <circle cx="512" cy="392" r="146" fill="url(#coin)"/>
-  <circle cx="512" cy="392" r="100" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="18"/>
-  
-  <path d="M282 478 H742 V636 Q742 788 512 850 Q282 788 282 636 Z" fill="#ffffff" stroke="#ffffff" stroke-width="28" stroke-linejoin="round"/>
-  <path d="M338 540 H686" stroke="#5b4cf0" stroke-width="16" stroke-dasharray="34 22" stroke-linecap="round" opacity="0.45"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><path d="M574 452 V690 Q574 812 452 812 Q392 812 350 780" fill="none" stroke="#EDEAE3" stroke-width="120" stroke-linecap="round"/><circle cx="574" cy="272" r="88" fill="#D8B26E"/></svg>

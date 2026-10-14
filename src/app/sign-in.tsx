@@ -1,43 +1,64 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EyeIcon } from '@/components/eye-icon';
+import { GradientFill } from '@/components/gradient-fill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Logo } from '@/components/logo';
 import { Button, Input } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { appUserEmail, useAppUsers, type AppUser } from '@/hooks/use-app-users';
+import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 
 const MIN_PASSWORD_LENGTH = 6;
 
+const LAST_USER_KEY = 'jibi.lastUser';
+/** Muted avatar colors, assigned by position in the list. */
+const AVATAR_COLORS = ['#5B6B8C', '#B07A55', '#5E8A6E', '#A8677A', '#5D8AA8', '#B39A5B', '#7A6E9E', '#A86A5E'];
+
 export default function SignInScreen() {
+  const theme = useTheme();
   const { users, error, loading } = useAppUsers();
   const [selected, setSelected] = useState<AppUser | null>(null);
+  const [lastUser, setLastUser] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(LAST_USER_KEY).then(setLastUser).catch(() => {});
+  }, []);
+
+  const colorOf = (u: AppUser) => AVATAR_COLORS[Math.max(0, users.indexOf(u)) % AVATAR_COLORS.length];
 
   return (
     <ThemedView style={styles.container}>
+      <GradientFill from={theme.background} to={theme.backgroundTint} angle="diagonal" />
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.form}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.form}>
           {selected ? (
-            <PasswordStep user={selected} onBack={() => setSelected(null)} />
+            <PasswordStep user={selected} color={colorOf(selected)} onBack={() => setSelected(null)} />
           ) : (
             <>
-              <Logo size={56} />
-              <ThemedText type="subtitle">Who are you?</ThemedText>
+              <View style={styles.brand}>
+                <Logo size={72} />
+                <ThemedText style={styles.wordmark}>jibi</ThemedText>
+                <ThemedText themeColor="textSecondary">Who’s using jibi?</ThemedText>
+              </View>
+
               {error && <ThemedText type="small">{error}</ThemedText>}
-              {loading && users.length === 0 && (
-                <ThemedText type="small" themeColor="textSecondary">
-                  Loading…
-                </ThemedText>
-              )}
+              {loading && users.length === 0 && <ActivityIndicator color={theme.textSecondary} />}
+
               <View style={styles.grid}>
                 {users.map((u) => (
-                  <UserTile key={u.username} user={u} onPress={() => setSelected(u)} />
+                  <UserTile
+                    key={u.username}
+                    user={u}
+                    color={colorOf(u)}
+                    last={u.username === lastUser}
+                    onPress={() => setSelected(u)}
+                  />
                 ))}
               </View>
             </>
@@ -48,27 +69,42 @@ export default function SignInScreen() {
   );
 }
 
-function UserTile({ user, onPress }: { user: AppUser; onPress: () => void }) {
+function Avatar({ user, color, size }: { user: AppUser; color: string; size: number }) {
+  return (
+    <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: color + '1F', borderColor: color + '66' }]}>
+      <ThemedText style={{ fontSize: size * 0.48, lineHeight: size * 0.6 }}>{user.icon}</ThemedText>
+    </View>
+  );
+}
+
+function UserTile({ user, color, last, onPress }: { user: AppUser; color: string; last: boolean; onPress: () => void }) {
+  const theme = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={user.display_name}
+      accessibilityLabel={`${user.display_name}${user.has_password ? '' : ', new'}${last ? ', last signed in' : ''}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.tileWrapper, pressed && styles.pressed]}>
-      <ThemedView type="backgroundElement" style={styles.tile}>
-        <ThemedText style={styles.icon}>{user.icon}</ThemedText>
-        <ThemedText type="smallBold">{user.display_name}</ThemedText>
-        {!user.has_password && (
-          <ThemedText type="small" themeColor="textSecondary">
-            New
-          </ThemedText>
-        )}
-      </ThemedView>
+      style={({ pressed }) => [styles.tile, pressed && styles.pressed]}>
+      <View style={[styles.ring, { borderColor: last ? theme.accent : 'transparent' }]}>
+        <Avatar user={user} color={color} size={76} />
+      </View>
+      <ThemedText type="smallBold">{user.display_name}</ThemedText>
+      {!user.has_password ? (
+        <View style={[styles.badge, { backgroundColor: color }]}>
+          <ThemedText style={styles.badgeText}>NEW</ThemedText>
+        </View>
+      ) : last ? (
+        <ThemedText style={[styles.lastText, { color: theme.accent }]}>Last used</ThemedText>
+      ) : (
+        <View style={styles.badgeSpacer} />
+      )}
     </Pressable>
   );
 }
 
-function PasswordStep({ user, onBack }: { user: AppUser; onBack: () => void }) {
+function PasswordStep({ user, color, onBack }: { user: AppUser; color: string; onBack: () => void }) {
+  const theme = useTheme();
+  const [visible, setVisible] = useState(false);
   const isSetup = !user.has_password;
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -91,6 +127,7 @@ function PasswordStep({ user, onBack }: { user: AppUser; onBack: () => void }) {
     // Signing in with the password proves ownership, so it resets this device's Face ID lock
     // (escape hatch if the passkey was deleted or Face ID stops working).
     if (data.user) await AsyncStorage.removeItem(`jibi.lock.enabled.${data.user.id}`).catch(() => {});
+    if (data.session) await AsyncStorage.setItem(LAST_USER_KEY, user.username).catch(() => {});
     setBusy(false);
 
     if (error) {
@@ -104,33 +141,44 @@ function PasswordStep({ user, onBack }: { user: AppUser; onBack: () => void }) {
 
   return (
     <>
-      <Pressable onPress={onBack} hitSlop={8}>
+      <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" style={styles.back}>
         <ThemedText type="small" themeColor="textSecondary">
-          ← Not {user.display_name}?
+          ‹ Not {user.display_name}?
         </ThemedText>
       </Pressable>
 
       <View style={styles.header}>
-        <ThemedText style={styles.icon}>{user.icon}</ThemedText>
+        <Avatar user={user} color={color} size={104} />
         <ThemedText type="subtitle">{user.display_name}</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.center}>
+          {isSetup ? 'First time here — choose a password.' : 'Welcome back. Enter your password.'}
+        </ThemedText>
       </View>
-      <ThemedText themeColor="textSecondary">
-        {isSetup ? 'First time here — choose your password.' : 'Enter your password.'}
-      </ThemedText>
 
-      <Input
-        placeholder={isSetup ? 'New password' : 'Password'}
-        secureTextEntry
-        autoFocus
-        autoComplete={isSetup ? 'new-password' : 'current-password'}
-        value={password}
-        onChangeText={setPassword}
-        onSubmitEditing={isSetup ? undefined : submit}
-      />
+      <View style={styles.passwordRow}>
+        <Input
+          placeholder={isSetup ? 'New password' : 'Password'}
+          secureTextEntry={!visible}
+          autoFocus
+          autoComplete={isSetup ? 'new-password' : 'current-password'}
+          value={password}
+          onChangeText={setPassword}
+          onSubmitEditing={isSetup ? undefined : submit}
+          style={styles.passwordInput}
+        />
+        <Pressable
+          onPress={() => setVisible(!visible)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+          style={styles.eye}>
+          <EyeIcon closed={!visible} color={theme.textSecondary} size={20} />
+        </Pressable>
+      </View>
       {isSetup && (
         <Input
           placeholder="Confirm password"
-          secureTextEntry
+          secureTextEntry={!visible}
           autoComplete="new-password"
           value={confirm}
           onChangeText={setConfirm}
@@ -138,9 +186,13 @@ function PasswordStep({ user, onBack }: { user: AppUser; onBack: () => void }) {
         />
       )}
 
-      {message && <ThemedText type="small">{message}</ThemedText>}
+      {message && (
+        <ThemedText type="small" style={[styles.center, { color: theme.expense }]}>
+          {message}
+        </ThemedText>
+      )}
 
-      <Button title={isSetup ? 'Set password' : 'Sign in'} disabled={busy} onPress={submit} />
+      <Button title={busy ? 'One moment…' : isSetup ? 'Set password' : 'Sign in'} disabled={busy} onPress={submit} />
     </>
   );
 }
@@ -148,16 +200,22 @@ function PasswordStep({ user, onBack }: { user: AppUser; onBack: () => void }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.four },
-  form: { width: '100%', maxWidth: 400, gap: Spacing.three },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
-  tileWrapper: { width: '47%', flexGrow: 1 },
-  tile: {
-    alignItems: 'center',
-    gap: Spacing.one,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  icon: { fontSize: 40, lineHeight: 48 },
-  pressed: { opacity: 0.7 },
+  form: { width: '100%', maxWidth: 420, gap: Spacing.four },
+  brand: { alignItems: 'center', gap: Spacing.one },
+  wordmark: { fontSize: 30, lineHeight: 36, fontWeight: 700, letterSpacing: -0.5, marginTop: Spacing.two },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: Spacing.two, rowGap: Spacing.four },
+  tile: { width: 108, alignItems: 'center', gap: Spacing.one },
+  ring: { borderWidth: 2, borderRadius: 999, padding: 3 },
+  avatar: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
+  badge: { paddingHorizontal: Spacing.two, paddingVertical: 1, borderRadius: 999 },
+  badgeText: { color: '#ffffff', fontSize: 10, lineHeight: 14, fontWeight: 800, letterSpacing: 0.6 },
+  lastText: { fontSize: 11, lineHeight: 16, fontWeight: 700 },
+  badgeSpacer: { height: 16 },
+  back: { alignSelf: 'flex-start' },
+  header: { alignItems: 'center', gap: Spacing.two },
+  center: { textAlign: 'center' },
+  passwordRow: { justifyContent: 'center' },
+  passwordInput: { paddingRight: 48 },
+  eye: { position: 'absolute', right: Spacing.three },
+  pressed: { opacity: 0.6 },
 });
