@@ -52,6 +52,38 @@ export const Colors = {
   },
 } as const;
 
+/** Panic mode: ember-on-charcoal, used in both light and dark mode while panic mode is on. */
+export const PanicColors = {
+  text: '#fff4ec',
+  textSecondary: '#f4b9a2',
+  textMuted: '#a97a6c',
+  background: '#140606',
+  backgroundElement: '#2a0d0a',
+  backgroundSelected: '#45140f',
+  card: '#1e0907',
+  border: 'rgba(255,120,80,0.20)',
+  hero: '#6e1007',
+  heroText: '#ffffff',
+  heroTextSecondary: '#ffc1a6',
+  income: '#4cc76a',
+  expense: '#ff6a3d',
+  savings: '#ffb020',
+  unsorted: '#6b4a44',
+  accent: '#ff7a1a',
+  backgroundTint: '#2a0905',
+  cardTint: '#2e0c08',
+} as const satisfies Record<keyof typeof Colors.dark, string>;
+
+/** Fire gradient stops, hottest last. */
+export const Fire = {
+  smoke: '#8a807c',
+  red: '#d7261e',
+  orange: '#ff6a1a',
+  amber: '#ffaa1f',
+  yellow: '#ffe066',
+  core: '#fff6c8',
+} as const;
+
 /**
  * Fixed categorical palette (validated for color-vision deficiency in this order).
  * Category N always uses slot N; never cycle — categories without a slot fold into "Other".

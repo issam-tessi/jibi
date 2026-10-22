@@ -3,15 +3,18 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { CategoryPalette, Colors } from '@/constants/theme';
+import { CategoryPalette, Colors, PanicColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePanicActive } from '@/providers/panic-provider';
 import { usePreferences } from '@/providers/preferences-provider';
 
-export function useTheme() {
+export function useTheme(): Record<keyof typeof PanicColors, string> {
   const scheme = useColorScheme();
   const { accent } = usePreferences();
+  const panic = usePanicActive();
   const theme = scheme === 'dark' ? 'dark' : 'light';
 
+  if (panic) return PanicColors;
   return { ...Colors[theme], accent: CategoryPalette[theme][accent] ?? Colors[theme].accent };
 }
 

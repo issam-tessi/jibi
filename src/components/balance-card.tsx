@@ -1,13 +1,17 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { EyeIcon } from '@/components/eye-icon';
+import { FireField } from '@/components/fire';
+import { PanicButton } from '@/components/panic-button';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMoney } from '@/lib/money';
 import { POTS } from '@/lib/pots';
 import { useFinance } from '@/providers/finance-provider';
+import { usePanic } from '@/providers/panic-provider';
 import { MASKED, usePrivacy } from '@/providers/privacy-provider';
 
 /** Always-visible summary: spendable total (card + cash) and each pot. Hidden behind Face ID when locked. */
@@ -15,6 +19,7 @@ export function BalanceCard() {
   const theme = useTheme();
   const { balances, loading } = useFinance();
   const { enabled, locked, unlock, lock } = usePrivacy();
+  const panic = usePanic();
   const [failed, setFailed] = useState(false);
   const fmt = (minor: number) =>
     locked ? `${MASKED} DT` : loading ? '—' : formatMoney(minor, balances.currency);
@@ -32,9 +37,14 @@ export function BalanceCard() {
       accessibilityRole={locked ? 'button' : undefined}
       accessibilityLabel={locked ? 'Balances hidden. Unlock with Face ID' : undefined}
       style={[styles.card, { backgroundColor: theme.hero }]}>
+      {panic.active && <FireField embers={14} smoke={4} seed={2} />}
       <View style={styles.totalRow}>
         <View style={styles.flex}>
-          <ThemedText style={[styles.label, { color: theme.heroTextSecondary }]}>Balance</ThemedText>
+          <ThemedText style={[styles.label, { color: theme.heroTextSecondary }]}>
+            {panic.active && !locked && panic.report && panic.report.burned > 0
+              ? `Balance · 🔥 ${fmt(panic.report.burned)} burned`
+              : 'Balance'}
+          </ThemedText>
           <ThemedText
             style={[styles.amount, { color: theme.heroText }, locked && styles.masked]}
             numberOfLines={1}
@@ -43,6 +53,7 @@ export function BalanceCard() {
             {fmt(spendable)}
           </ThemedText>
         </View>
+        <PanicButton active={panic.active} onPress={() => router.push('/panic')} />
         {enabled && (
           <Pressable
             onPress={locked ? tryUnlock : lock}
@@ -92,6 +103,7 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.two,
     borderRadius: Radius.large,
+    overflow: 'hidden',
     paddingVertical: Spacing.two + Spacing.one,
     paddingHorizontal: Spacing.three,
   },
