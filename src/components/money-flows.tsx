@@ -12,7 +12,7 @@ import type { AccountKind, Database } from '@/lib/database.types';
 import { formatDay, monthRange, toISODate, today } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
 import { POTS, potIcon, potLabel, transferIcon, transferTitle } from '@/lib/pots';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { useFinance } from '@/providers/finance-provider';
 
 type ViewRow = Database['public']['Views']['entries']['Row'];
@@ -34,7 +34,7 @@ export function MoneyFlows({ year, month, monthRows }: { year: number; month: nu
   // Every transaction leg up to the end of the month: needed for opening balances and daily running totals.
   useEffect(() => {
     let cancelled = false;
-    supabase
+    db
       .from('transactions')
       .select('kind, amount_cents, occurred_on, account:accounts(kind)')
       .lt('occurred_on', to)

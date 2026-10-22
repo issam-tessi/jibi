@@ -2,7 +2,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState, type Pro
 
 import type { Tables } from '@/lib/database.types';
 import { addDays, today } from '@/lib/dates';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 
 export type GymVisit = Tables<'gym_visits'>;
 
@@ -24,7 +24,7 @@ export function GymProvider({ children }: PropsWithChildren) {
 
   const refresh = useCallback(async () => {
     const since = new Date(`${addDays(today(), -GYM_WINDOW_DAYS)}T00:00:00`).toISOString();
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('gym_visits')
       .select('*')
       .gte('visited_at', since)
@@ -47,8 +47,8 @@ export function GymProvider({ children }: PropsWithChildren) {
     return {
       refresh,
       checkIn: ({ at, workout, note }) =>
-        run(supabase.from('gym_visits').insert({ visited_at: at.toISOString(), workout, note: note.trim() || null })),
-      deleteVisit: (id) => run(supabase.from('gym_visits').delete().eq('id', id)),
+        run(db.from('gym_visits').insert({ visited_at: at.toISOString(), workout, note: note.trim() || null })),
+      deleteVisit: (id) => run(db.from('gym_visits').delete().eq('id', id)),
     };
   }, [refresh]);
 

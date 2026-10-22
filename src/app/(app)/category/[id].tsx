@@ -40,7 +40,7 @@ function EditCategory({ category }: { category: Category }) {
     setError(null);
     const err = await updateCategory(category.id, name, icon);
     setBusy(false);
-    if (err) setError(err.includes('duplicate') ? 'You already have a category with that name.' : err);
+    if (err) setError(/duplicate|UNIQUE/.test(err) ? 'You already have a category with that name.' : err);
     else router.back();
   }
 

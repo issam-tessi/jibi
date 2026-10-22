@@ -8,13 +8,12 @@ import { Button, Card, SectionTitle, Segmented } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { usernameFromEmail } from '@/hooks/use-app-users';
 import { useTheme } from '@/hooks/use-theme';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/auth-provider';
 import { usePreferences } from '@/providers/preferences-provider';
 import { usePrivacy } from '@/providers/privacy-provider';
 
 export default function SettingsScreen() {
-  const { session } = useAuth();
+  const { session, signOut } = useAuth();
   const { appearance, homeView, weekStart, setPreference, reset } = usePreferences();
 
   return (
@@ -69,7 +68,7 @@ export default function SettingsScreen() {
         <ThemedText type="small" themeColor="textSecondary">
           Signed in as <ThemedText type="smallBold">{usernameFromEmail(session?.user.email)}</ThemedText>
         </ThemedText>
-        <Button title="Sign out" variant="secondary" onPress={() => supabase.auth.signOut()} />
+        <Button title="Sign out" variant="secondary" onPress={signOut} />
       </Card>
 
       <Button title="Reset appearance & Home settings" variant="danger" onPress={reset} />

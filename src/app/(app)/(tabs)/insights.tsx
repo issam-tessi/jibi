@@ -13,7 +13,7 @@ import { useCategoryColor, useTheme } from '@/hooks/use-theme';
 import type { Database } from '@/lib/database.types';
 import { formatDay, formatMonth, monthRange, toISODate, today } from '@/lib/dates';
 import { formatMoney } from '@/lib/money';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { useFinance } from '@/providers/finance-provider';
 
 type ViewRow = Database['public']['Views']['entries']['Row'];
@@ -45,7 +45,7 @@ export default function InsightsScreen() {
   // Refetch when the month changes or any entry is added/edited (activity changes).
   useEffect(() => {
     let cancelled = false;
-    supabase
+    db
       .from('entries')
       .select('*')
       .gte('occurred_on', from)
@@ -60,7 +60,7 @@ export default function InsightsScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    supabase
+    db
       .from('entries')
       .select('amount_cents, occurred_on')
       .eq('kind', 'expense')

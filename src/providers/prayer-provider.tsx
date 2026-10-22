@@ -2,7 +2,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState, type Pro
 
 import type { PrayerName, PrayerStatus, Tables } from '@/lib/database.types';
 import { addDays, today } from '@/lib/dates';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 
 export type PrayerLog = Tables<'prayer_logs'>;
 
@@ -23,7 +23,7 @@ export function PrayerProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState<PrayerState>({ logs: [], loading: true, error: null });
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('prayer_logs')
       .select('*')
       .gte('day', addDays(today(), -PRAYER_WINDOW_DAYS))
@@ -50,8 +50,8 @@ export function PrayerProvider({ children }: PropsWithChildren) {
           ],
         }));
         const { error } = status
-          ? await supabase.from('prayer_logs').upsert({ day, prayer, status }, { onConflict: 'user_id,day,prayer' })
-          : await supabase.from('prayer_logs').delete().eq('day', day).eq('prayer', prayer);
+          ? await db.from('prayer_logs').upsert({ day, prayer, status }, { onConflict: 'user_id,day,prayer' })
+          : await db.from('prayer_logs').delete().eq('day', day).eq('prayer', prayer);
         await refresh();
         return error?.message ?? null;
       },

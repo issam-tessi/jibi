@@ -10,7 +10,7 @@ import { useCategoryColor, useTheme } from '@/hooks/use-theme';
 import { useFinance, type Category } from '@/providers/finance-provider';
 
 function duplicateNameMessage(err: string) {
-  return err.includes('duplicate') ? 'You already have a category with that name.' : err;
+  return /duplicate|UNIQUE/.test(err) ? 'You already have a category with that name.' : err;
 }
 
 /** Category list and "new category" form, shown in Settings. */

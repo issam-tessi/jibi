@@ -13,7 +13,7 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Database } from '@/lib/database.types';
 import { addDays, formatDay, formatMonth, formatWeek, monthRange, today, weekStart } from '@/lib/dates';
 import { formatMoney, minorDigits } from '@/lib/money';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { useFinance, type Entry } from '@/providers/finance-provider';
 import { usePreferences, type HomeView } from '@/providers/preferences-provider';
 
@@ -42,7 +42,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (view === 'recent') return;
     let cancelled = false;
-    supabase
+    db
       .from('entries')
       .select('*')
       .gte('occurred_on', range.from)

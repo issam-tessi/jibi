@@ -10,9 +10,9 @@ import { ThemedView } from '@/components/themed-view';
 import { Logo } from '@/components/logo';
 import { Button, Input } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
-import { appUserEmail, useAppUsers, type AppUser } from '@/hooks/use-app-users';
+import { useAppUsers, type AppUser } from '@/hooks/use-app-users';
 import { useTheme } from '@/hooks/use-theme';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/providers/auth-provider';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -105,6 +105,7 @@ function UserTile({ user, color, last, onPress }: { user: AppUser; color: string
 function PasswordStep({ user, color, onBack }: { user: AppUser; color: string; onBack: () => void }) {
   const theme = useTheme();
   const [visible, setVisible] = useState(false);
+  const { signIn, createProfile } = useAuth();
   const isSetup = !user.has_password;
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -120,22 +121,11 @@ function PasswordStep({ user, color, onBack }: { user: AppUser; color: string; o
     }
 
     setBusy(true);
-    const email = appUserEmail(user.username);
-    const { data, error } = isSetup
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
-    // Signing in with the password proves ownership, so it resets this device's Face ID lock
-    // (escape hatch if the passkey was deleted or Face ID stops working).
-    if (data.user) await AsyncStorage.removeItem(`jibi.lock.enabled.${data.user.id}`).catch(() => {});
-    if (data.session) await AsyncStorage.setItem(LAST_USER_KEY, user.username).catch(() => {});
+    if (user.cloud && !user.local) setMessage('Bringing your data over from the cloud… (one time)');
+    const { error } = isSetup ? await createProfile(user.username, password) : await signIn(user.username, password);
     setBusy(false);
-
-    if (error) {
-      setMessage(error.message === 'Invalid login credentials' ? 'Wrong password.' : error.message);
-    } else if (!data.session) {
-      // Happens if "Confirm email" is still enabled in Supabase Auth settings.
-      setMessage('Account created but not signed in: disable "Confirm email" in Supabase Auth.');
-    }
+    if (error) return setMessage(error);
+    await AsyncStorage.setItem(LAST_USER_KEY, user.username).catch(() => {});
     // On success the auth listener swaps the navigator to the app.
   }
 
@@ -151,7 +141,11 @@ function PasswordStep({ user, color, onBack }: { user: AppUser; color: string; o
         <Avatar user={user} color={color} size={104} />
         <ThemedText type="subtitle">{user.display_name}</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.center}>
-          {isSetup ? 'First time here — choose a password.' : 'Welcome back. Enter your password.'}
+          {isSetup
+            ? 'First time here — choose a password.'
+            : user.local
+              ? 'Welcome back. Enter your password.'
+              : 'First time on this device — use your usual password and your data comes along.'}
         </ThemedText>
       </View>
 
@@ -187,7 +181,7 @@ function PasswordStep({ user, color, onBack }: { user: AppUser; color: string; o
       )}
 
       {message && (
-        <ThemedText type="small" style={[styles.center, { color: theme.expense }]}>
+        <ThemedText type="small" style={[styles.center, { color: busy ? theme.textSecondary : theme.expense }]}>
           {message}
         </ThemedText>
       )}

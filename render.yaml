@@ -21,6 +21,14 @@ services:
         source: /*
         destination: /index.html
     headers:
+      # Cross-origin isolation: required for on-device SQLite (expo-sqlite web uses SharedArrayBuffer).
+      # require-corp rather than credentialless because Safari doesn't support credentialless.
+      - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin
+      - path: /*
+        name: Cross-Origin-Embedder-Policy
+        value: require-corp
       - path: /_expo/static/*
         name: Cache-Control
         value: public, max-age=31536000, immutable

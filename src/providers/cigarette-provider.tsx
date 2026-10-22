@@ -2,7 +2,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState, type Pro
 
 import type { Tables } from '@/lib/database.types';
 import { addDays, today } from '@/lib/dates';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 import { useFinance } from '@/providers/finance-provider';
 
 export type CigPack = Tables<'cig_packs'>;
@@ -36,9 +36,9 @@ export function CigaretteProvider({ children }: PropsWithChildren) {
   const refresh = useCallback(async () => {
     const since = new Date(`${addDays(today(), -SMOKE_WINDOW_DAYS)}T00:00:00`).toISOString();
     const [stock, packs, smokes] = await Promise.all([
-      supabase.from('cig_stock').select('*'),
-      supabase.from('cig_packs').select('*').order('bought_on', { ascending: false }).order('created_at', { ascending: false }).limit(1000),
-      supabase.from('cig_smokes').select('*').gte('smoked_at', since).order('smoked_at', { ascending: false }).limit(1000),
+      db.from('cig_stock').select('*'),
+      db.from('cig_packs').select('*').order('bought_on', { ascending: false }).order('created_at', { ascending: false }).limit(1000),
+      db.from('cig_smokes').select('*').gte('smoked_at', since).order('smoked_at', { ascending: false }).limit(1000),
     ]);
     setState({
       stock: Object.fromEntries((stock.data ?? []).map((s) => [s.brand, s.left_count])),
@@ -63,8 +63,8 @@ export function CigaretteProvider({ children }: PropsWithChildren) {
     };
     return {
       refresh,
-      smoke: (brand, note) => run(supabase.from('cig_smokes').insert({ brand, note: note.trim() || null })),
-      deleteSmoke: (id) => run(supabase.from('cig_smokes').delete().eq('id', id)),
+      smoke: (brand, note) => run(db.from('cig_smokes').insert({ brand, note: note.trim() || null })),
+      deleteSmoke: (id) => run(db.from('cig_smokes').delete().eq('id', id)),
     };
   }, [refresh]);
 

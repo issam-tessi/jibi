@@ -2,7 +2,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState, type Pro
 
 import type { Tables } from '@/lib/database.types';
 import { addDays, today } from '@/lib/dates';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 
 export type Workout = Tables<'workouts'> & { sets: Tables<'workout_sets'>[] };
 export type DraftSet = { weight: number | null; reps: number };
@@ -23,7 +23,7 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
 
   const refresh = useCallback(async () => {
     const since = new Date(`${addDays(today(), -365)}T00:00:00`).toISOString();
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('workouts')
       .select('*, sets:workout_sets(*)')
       .gte('performed_at', since)
@@ -45,7 +45,7 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
     () => ({
       refresh,
       saveWorkout: async ({ at, name, note, exercises }) => {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('workouts')
           .insert({ performed_at: at.toISOString(), name, note: note.trim() || null })
           .select('id')
@@ -56,9 +56,9 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
           e.sets.map((s) => ({ workout_id: data.id, exercise: e.name, position: position++, weight_kg: s.weight, reps: s.reps }))
         );
         if (rows.length) {
-          const res = await supabase.from('workout_sets').insert(rows);
+          const res = await db.from('workout_sets').insert(rows);
           if (res.error) {
-            await supabase.from('workouts').delete().eq('id', data.id);
+            await db.from('workouts').delete().eq('id', data.id);
             return res.error.message;
           }
         }
@@ -66,7 +66,7 @@ export function WorkoutProvider({ children }: PropsWithChildren) {
         return null;
       },
       deleteWorkout: async (id) => {
-        const { error } = await supabase.from('workouts').delete().eq('id', id);
+        const { error } = await db.from('workouts').delete().eq('id', id);
         if (!error) await refresh();
         return error?.message ?? null;
       },

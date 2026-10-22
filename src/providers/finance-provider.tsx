@@ -4,7 +4,7 @@ import { CIGS_PER_PACK } from '@/lib/cigarettes';
 import type { AccountKind, Database, Tables } from '@/lib/database.types';
 import { toActions, type HistoryAction } from '@/lib/history';
 import { DEFAULT_CURRENCY } from '@/lib/money';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
 
 export type Category = Tables<'categories'>;
 export type Pot = AccountKind;
@@ -89,22 +89,22 @@ export function FinanceProvider({ children }: PropsWithChildren) {
 
   const refresh = useCallback(async () => {
     const [balances, categories, activity, unsorted, history] = await Promise.all([
-      supabase.from('account_balances').select('*'),
-      supabase.from('categories').select('*').order('created_at'),
-      supabase
+      db.from('account_balances').select('*'),
+      db.from('categories').select('*').order('created_at'),
+      db
         .from('entries')
         .select('*')
         .order('occurred_on', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(200),
-      supabase
+      db
         .from('entries')
         .select('*')
         .eq('kind', 'expense')
         .is('category_id', null)
         .order('occurred_on', { ascending: false })
         .order('created_at', { ascending: false }),
-      supabase.from('history').select('*').order('id', { ascending: false }).limit(400),
+      db.from('history').select('*').order('id', { ascending: false }).limit(400),
     ]);
 
     const rows = balances.data ?? [];
@@ -160,8 +160,8 @@ export function FinanceProvider({ children }: PropsWithChildren) {
           };
           return run(
             existing?.transfer_id
-              ? supabase.rpc('update_transfer', { transfer: existing.transfer_id, ...args })
-              : supabase.rpc('move_money', args)
+              ? db.rpc('update_transfer', { transfer: existing.transfer_id, ...args })
+              : db.rpc('move_money', args)
           );
         }
         const accountId = potIds[draft.pot];
@@ -173,18 +173,18 @@ export function FinanceProvider({ children }: PropsWithChildren) {
           note,
           occurred_on: draft.date,
         };
-        if (existing) return run(supabase.from('transactions').update(fields).eq('id', existing.id));
+        if (existing) return run(db.from('transactions').update(fields).eq('id', existing.id));
         const cigs = draft.type === 'expense' ? draft.cigarettes : undefined;
-        if (!cigs) return run(supabase.from('transactions').insert({ ...fields, kind: draft.type }));
+        if (!cigs) return run(db.from('transactions').insert({ ...fields, kind: draft.type }));
         return run(
           (async () => {
-            const { data, error } = await supabase
+            const { data, error } = await db
               .from('transactions')
               .insert({ ...fields, kind: draft.type })
               .select('id')
               .single();
             if (error || !data) return { error };
-            return supabase.from('cig_packs').insert({
+            return db.from('cig_packs').insert({
               transaction_id: data.id,
               brand: cigs.brand,
               packs: cigs.packs,
@@ -197,23 +197,23 @@ export function FinanceProvider({ children }: PropsWithChildren) {
         );
       },
       categorize: (entryId, categoryId) =>
-        run(supabase.from('transactions').update({ category_id: categoryId }).eq('id', entryId)),
+        run(db.from('transactions').update({ category_id: categoryId }).eq('id', entryId)),
       deleteEntry: (entry) =>
         run(
           entry.transfer_id
-            ? supabase.from('transactions').delete().eq('transfer_id', entry.transfer_id)
-            : supabase.from('transactions').delete().eq('id', entry.id)
+            ? db.from('transactions').delete().eq('transfer_id', entry.transfer_id)
+            : db.from('transactions').delete().eq('id', entry.id)
         ),
       createCategory: (name, icon) => {
         const used = new Set(state.categories.map((c) => c.color_slot));
         const slot = [1, 2, 3, 4, 5, 6, 7, 8].find((s) => !used.has(s)) ?? null;
-        return run(supabase.from('categories').insert({ name: name.trim(), icon, color_slot: slot }));
+        return run(db.from('categories').insert({ name: name.trim(), icon, color_slot: slot }));
       },
       updateCategory: (id, name, icon) =>
-        run(supabase.from('categories').update({ name: name.trim(), icon }).eq('id', id)),
-      deleteCategory: (id) => run(supabase.from('categories').delete().eq('id', id)),
-      undo: (groupId) => run(supabase.rpc('replay_history', { group_id: groupId, redo: false })),
-      redo: (groupId) => run(supabase.rpc('replay_history', { group_id: groupId, redo: true })),
+        run(db.from('categories').update({ name: name.trim(), icon }).eq('id', id)),
+      deleteCategory: (id) => run(db.rpc('delete_category', { id })),
+      undo: (groupId) => run(db.rpc('replay_history', { group_id: groupId, redo: false })),
+      redo: (groupId) => run(db.rpc('replay_history', { group_id: groupId, redo: true })),
     };
   }, [refresh, potIds, state.categories]);
 

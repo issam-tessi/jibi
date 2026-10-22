@@ -5,11 +5,19 @@ Personal finance tracker. One TypeScript codebase for **web, iOS and Android**.
 | Layer | Choice |
 | --- | --- |
 | App | [Expo](https://expo.dev) (React Native + Expo Router), TypeScript |
-| Backend | [Supabase](https://supabase.com): Postgres, Auth, row-level security |
+| Data | On-device SQLite ([expo-sqlite](https://docs.expo.dev/versions/latest/sdk/sqlite/)), one database per person |
+| Legacy cloud | [Supabase](https://supabase.com): only used once per device to import existing data |
 | Web hosting | [Render](https://render.com) static site (`render.yaml`) |
 | Mobile builds | EAS Build / Submit (`eas.json`) |
 
-All data lives in Supabase Postgres, so it's the same on every device. The app only keeps the login session locally.
+All data lives on the device in SQLite (`jibi-<username>.db`; on web it runs as WebAssembly in the browser).
+Nothing syncs between devices. The first time someone signs in on a device with their existing password, the app
+checks it against the old Supabase project and copies their data over once; after that it works offline.
+People who never had a cloud account just create a local password.
+
+On web, SQLite needs a cross-origin-isolated page: `metro.config.js` (dev) and `render.yaml` (production) send
+`Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. Browser data can be
+cleared by the user or by Safari for sites not added to the Home Screen, so install the web app to the Home Screen.
 
 ## Setup
 
@@ -30,10 +38,11 @@ src/app/                 routes (Expo Router)
   sign-in.tsx
   (app)/index.tsx        monthly overview
   (app)/transactions.tsx add / list / delete
-src/lib/supabase.ts      Supabase client
-src/lib/database.types.ts DB types (regenerate: npx supabase gen types typescript --project-id <ref>)
-src/lib/money.ts         amounts are integer cents everywhere
-supabase/migrations/     schema + RLS + new-user seed trigger
+src/lib/db/              on-device SQLite: schema + history triggers, Supabase-shaped query API, cloud import
+src/lib/supabase.ts      legacy cloud client (one-time import only)
+src/lib/database.types.ts row types shared by the app
+src/lib/money.ts         amounts are integer minor units everywhere
+supabase/migrations/     legacy cloud schema (source of the one-time import)
 ```
 
 ## Deploy web to Render
